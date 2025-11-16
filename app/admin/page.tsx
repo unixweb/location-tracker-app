@@ -74,9 +74,16 @@ export default function AdminDashboard() {
         const response = await fetch("/api/locations?sync=false"); // sync=false for faster response
         const data: LocationResponse = await response.json();
 
-        const uniqueDevices = new Set(
+        // Calculate online devices (last location < 10 minutes)
+        const now = Date.now();
+        const tenMinutesAgo = now - 10 * 60 * 1000;
+
+        const recentDevices = new Set(
           data.history
-            .filter((loc) => loc.user_id == 0) // Loose equality (handles "0" or 0)
+            .filter((loc) => {
+              const locationTime = new Date(loc.timestamp).getTime();
+              return locationTime > tenMinutesAgo;
+            })
             .map((loc) => loc.username)
         );
 
@@ -84,7 +91,7 @@ export default function AdminDashboard() {
           totalDevices: devices.length,
           totalPoints: data.total_points || data.history.length,
           lastUpdated: data.last_updated || new Date().toISOString(),
-          onlineDevices: uniqueDevices.size,
+          onlineDevices: recentDevices.size,
         });
       } catch (err) {
         console.error("Failed to fetch stats", err);
