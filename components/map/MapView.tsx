@@ -184,38 +184,52 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
               />
 
               {/* Markers */}
-              {sortedLocs.map((loc, idx) => (
-                <Marker
-                  key={`${deviceId}-${idx}`}
-                  position={[Number(loc.latitude), Number(loc.longitude)]}
-                  icon={createCustomIcon(
-                    device.color,
-                    idx === sortedLocs.length - 1
-                  )}
-                >
-                  <Popup>
-                    <div className="text-sm space-y-1">
-                      <p className="font-bold text-base flex items-center gap-2">
-                        <span className="text-lg">📱</span>
-                        {device.name}
-                      </p>
-                      <p className="flex items-center gap-1">
-                        <span>🕒</span> {loc.display_time}
-                      </p>
-                      {loc.battery != null && Number(loc.battery) > 0 && (
-                        <p className="flex items-center gap-1">
-                          <span>🔋</span> Battery: {loc.battery}%
+              {sortedLocs.map((loc, idx) => {
+                // Debug: Log for last location only
+                if (idx === sortedLocs.length - 1) {
+                  console.log('[Popup Debug] Latest location for', device.name, {
+                    speed: loc.speed,
+                    speed_type: typeof loc.speed,
+                    speed_is_null: loc.speed === null,
+                    speed_is_undefined: loc.speed === undefined,
+                    condition_result: loc.speed != null,
+                    display_time: loc.display_time
+                  });
+                }
+
+                return (
+                  <Marker
+                    key={`${deviceId}-${idx}`}
+                    position={[Number(loc.latitude), Number(loc.longitude)]}
+                    icon={createCustomIcon(
+                      device.color,
+                      idx === sortedLocs.length - 1
+                    )}
+                  >
+                    <Popup>
+                      <div className="text-sm space-y-1">
+                        <p className="font-bold text-base flex items-center gap-2">
+                          <span className="text-lg">📱</span>
+                          {device.name}
                         </p>
-                      )}
-                      {loc.speed != null && (
                         <p className="flex items-center gap-1">
-                          <span>🚗</span> Speed: {Number(loc.speed).toFixed(1)} km/h
+                          <span>🕒</span> {loc.display_time}
                         </p>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+                        {loc.battery != null && Number(loc.battery) > 0 && (
+                          <p className="flex items-center gap-1">
+                            <span>🔋</span> Battery: {loc.battery}%
+                          </p>
+                        )}
+                        {loc.speed != null && (
+                          <p className="flex items-center gap-1">
+                            <span>🚗</span> Speed: {Number(loc.speed).toFixed(1)} km/h
+                          </p>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </div>
           );
         })}
