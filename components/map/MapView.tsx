@@ -202,16 +202,17 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
         {Object.entries(deviceGroups).map(([deviceId, locs]) => {
           // Use device from API if available, fallback to hardcoded
           const device = devices[deviceId] || getDevice(deviceId);
+          // Sort DESC (newest first) - same as API
           const sortedLocs = [...locs].sort(
             (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           );
 
           return (
             <div key={deviceId}>
-              {/* Polyline for path */}
+              {/* Polyline for path - reverse for chronological drawing (oldest to newest) */}
               <Polyline
-                positions={sortedLocs.map((loc) => [
+                positions={[...sortedLocs].reverse().map((loc) => [
                   Number(loc.latitude),
                   Number(loc.longitude),
                 ])}
@@ -222,8 +223,8 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
 
               {/* Markers */}
               {sortedLocs.map((loc, idx) => {
-                // Debug: Log for last location only
-                if (idx === sortedLocs.length - 1) {
+                // Debug: Log for first location only (newest)
+                if (idx === 0) {
                   console.log('[Popup Debug] Latest location for', device.name, {
                     speed: loc.speed,
                     speed_type: typeof loc.speed,
@@ -240,7 +241,7 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
                     position={[Number(loc.latitude), Number(loc.longitude)]}
                     icon={createCustomIcon(
                       device.color,
-                      idx === sortedLocs.length - 1
+                      idx === 0 // First item is newest (DESC sort)
                     )}
                   >
                     <Popup>
