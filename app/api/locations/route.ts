@@ -113,6 +113,11 @@ export async function GET(request: NextRequest) {
         filteredHistory = filteredHistory.filter(loc => loc.username === username);
       }
 
+      if (timeRangeHours) {
+        const cutoffTime = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000).toISOString();
+        filteredHistory = filteredHistory.filter(loc => loc.timestamp >= cutoffTime);
+      }
+
       return NextResponse.json({
         ...n8nData,
         history: filteredHistory,
