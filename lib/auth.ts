@@ -13,6 +13,7 @@ function getDb() {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET || "fallback-secret-for-development",
+  trustHost: true, // Trust proxy/reverse proxy headers (required for different hosts/IPs)
   providers: [
     Credentials({
       credentials: {
