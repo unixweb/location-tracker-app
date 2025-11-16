@@ -13,6 +13,7 @@ function getDb() {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET || "fallback-secret-for-development",
+  trustHost: true, // Allow any host (development & production)
   providers: [
     Credentials({
       credentials: {
