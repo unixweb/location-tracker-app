@@ -41,6 +41,30 @@ export async function GET(request: NextRequest) {
         if (response.ok) {
           const data: LocationResponse = await response.json();
 
+          // Debug: Log first location from n8n
+          if (data.history && data.history.length > 0) {
+            console.log('[N8N Debug] First location from n8n:', {
+              username: data.history[0].username,
+              speed: data.history[0].speed,
+              speed_type: typeof data.history[0].speed,
+              speed_exists: 'speed' in data.history[0],
+              battery: data.history[0].battery,
+              battery_type: typeof data.history[0].battery,
+              battery_exists: 'battery' in data.history[0]
+            });
+          }
+
+          // Normalize data: Ensure speed and battery fields exist (even if 0)
+          if (data.history && Array.isArray(data.history)) {
+            data.history = data.history.map(loc => ({
+              ...loc,
+              // If speed field is missing, set to null (not undefined)
+              speed: loc.speed !== undefined ? loc.speed : null,
+              // If battery field is missing, set to null (not undefined)
+              battery: loc.battery !== undefined ? loc.battery : null,
+            }));
+          }
+
           // Store new locations in SQLite
           if (data.history && Array.isArray(data.history) && data.history.length > 0) {
             // Get latest timestamp from our DB
@@ -66,12 +90,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Read from local SQLite with filters
-    const locations = locationDb.findMany({
+    let locations = locationDb.findMany({
       user_id: 0, // Always filter for MQTT devices
       username,
       timeRangeHours,
       limit,
     });
+
+    // Normalize locations: Ensure speed and battery are numbers or null (not undefined)
+    locations = locations.map(loc => ({
+      ...loc,
+      speed: loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null,
+      battery: loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null,
+    }));
 
     // Get actual total count from database (not limited by 'limit' parameter)
     const stats = locationDb.getStats();
