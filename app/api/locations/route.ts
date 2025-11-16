@@ -73,12 +73,15 @@ export async function GET(request: NextRequest) {
       limit,
     });
 
+    // Get actual total count from database (not limited by 'limit' parameter)
+    const stats = locationDb.getStats();
+
     // Step 3: Return data in n8n-compatible format
     const response: LocationResponse = {
       success: true,
       current: locations.length > 0 ? locations[0] : null,
       history: locations,
-      total_points: locations.length,
+      total_points: stats.total, // Use actual total from DB, not limited results
       last_updated: locations.length > 0 ? locations[0].timestamp : new Date().toISOString(),
     };
 
