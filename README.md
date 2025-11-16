@@ -2,6 +2,8 @@
 
 Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTracks Integration, SQLite-Datenbank, Admin-Panel und Authentifizierung.
 
+![Location Tracker Screenshot](https://e.pcloud.link/publink/show?code=XZTG7AZEROkk0HTvVbowWL97NaXbk5TxNQX)
+
 ## 📋 Inhaltsverzeichnis
 
 - [Features](#-features)
@@ -23,9 +25,12 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 - 🗺️ **Interaktive Karte** - Echtzeit-Standortverfolgung mit Leaflet.js
 - 🎨 **Mehrere Kartenansichten** - Standard, Satellit, Dark Mode
 - 🔍 **Device-Filterung** - Filtern nach Gerät und Zeitraum (1h, 3h, 6h, 12h, 24h)
-- 🔄 **Auto-Refresh** - Automatische Aktualisierung alle 5 Sekunden
+- 🔄 **Auto-Refresh** - Automatische Aktualisierung alle 5 Sekunden mit Pause/Resume Button
+- 🎯 **Auto-Center** - Karte zentriert automatisch auf neueste Position
+- ⏸️ **Pause/Resume** - Toggle-Button zum Stoppen/Starten des Auto-Refresh
 - 📱 **Responsive Design** - Optimiert für Desktop und Mobile
 - 📊 **Polylines** - Bewegungspfade mit farbcodierter Darstellung
+- 🎨 **Marker-Sortierung** - Neueste Position immer im Vordergrund (z-index optimiert)
 
 ### Admin-Panel (Login erforderlich)
 - 🔐 **Authentifizierung** - NextAuth.js v5 mit bcrypt-Hashing
@@ -69,8 +74,8 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 
 1. **Repository klonen**
 ```bash
-git clone <repo-url>
-cd claude-code-web/poc-app
+git clone https://github.com/unixweb/location-tracker-app.git
+cd location-tracker-app
 ```
 
 2. **Dependencies installieren**
@@ -142,13 +147,73 @@ node scripts/remove-duplicates.js
 
 ### Schema
 
-**database.sqlite:**
-- `User` - Benutzer mit Rollen (ADMIN, VIEWER)
-- `Device` - Geräte-Konfiguration
+#### **database.sqlite** (User & Devices)
 
-**locations.sqlite:**
-- `Location` - Standort-Historie mit Telemetrie
-- UNIQUE Index: (timestamp, username, latitude, longitude)
+**User Tabelle:**
+```sql
+id              TEXT PRIMARY KEY
+username        TEXT UNIQUE NOT NULL
+email           TEXT
+passwordHash    TEXT NOT NULL
+role            TEXT NOT NULL DEFAULT 'VIEWER'  -- ADMIN oder VIEWER
+createdAt       TEXT DEFAULT (datetime('now'))
+updatedAt       TEXT DEFAULT (datetime('now'))
+lastLoginAt     TEXT
+```
+
+**Device Tabelle:**
+```sql
+id              TEXT PRIMARY KEY
+name            TEXT NOT NULL
+color           TEXT NOT NULL
+ownerId         TEXT                            -- FK zu User.id
+isActive        INTEGER DEFAULT 1               -- 0 oder 1
+description     TEXT
+icon            TEXT
+createdAt       TEXT DEFAULT (datetime('now'))
+updatedAt       TEXT DEFAULT (datetime('now'))
+```
+
+**Indexes:**
+- `idx_user_username` ON User(username)
+- `idx_device_owner` ON Device(ownerId)
+- `idx_device_active` ON Device(isActive)
+
+---
+
+#### **locations.sqlite** (Tracking Data)
+
+**Location Tabelle:**
+```sql
+id              INTEGER PRIMARY KEY AUTOINCREMENT
+latitude        REAL NOT NULL                   -- -90 bis +90
+longitude       REAL NOT NULL                   -- -180 bis +180
+timestamp       TEXT NOT NULL                   -- ISO 8601 format
+user_id         INTEGER DEFAULT 0
+first_name      TEXT
+last_name       TEXT
+username        TEXT                            -- Device Tracker ID
+marker_label    TEXT
+display_time    TEXT                            -- Formatierte Zeit für UI
+chat_id         INTEGER DEFAULT 0
+battery         INTEGER                         -- Batteriestand in %
+speed           REAL                            -- Geschwindigkeit in km/h
+created_at      TEXT DEFAULT (datetime('now'))
+```
+
+**Indexes:**
+- `idx_location_timestamp` ON Location(timestamp DESC)
+- `idx_location_username` ON Location(username)
+- `idx_location_user_id` ON Location(user_id)
+- `idx_location_composite` ON Location(user_id, username, timestamp DESC)
+- `idx_location_unique` UNIQUE ON Location(timestamp, username, latitude, longitude)
+
+**Constraints:**
+- Latitude: -90 bis +90
+- Longitude: -180 bis +180
+- UNIQUE: Kombination aus timestamp, username, latitude, longitude verhindert Duplikate
+
+**WAL Mode:** Beide Datenbanken nutzen Write-Ahead Logging für bessere Concurrency
 
 ---
 
@@ -358,7 +423,7 @@ node scripts/optimize-db.js
 npm run dev
 
 # Production Logs (PM2)
-pm2 logs poc-app
+pm2 logs location-tracker-app
 ```
 
 ---
@@ -400,7 +465,7 @@ npm run start
 npm install -g pm2
 
 # App starten
-pm2 start npm --name "poc-app" -- start
+pm2 start npm --name "location-tracker-app" -- start
 
 # Auto-Start bei Server-Neustart
 pm2 startup
@@ -449,7 +514,7 @@ server {
 ## 📂 Projektstruktur
 
 ```
-poc-app/
+location-tracker-app/
 ├── app/
 │   ├── api/
 │   │   ├── auth/[...nextauth]/      # NextAuth API
@@ -568,7 +633,7 @@ Diese App wurde von Prisma ORM auf direktes better-sqlite3 migriert:
 
 ## 📄 Lizenz
 
-Internal Use Only - POC Anwendung
+MIT License - Open Source
 
 ---
 

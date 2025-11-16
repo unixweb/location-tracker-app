@@ -1,7 +1,7 @@
 {
-  "name": "poc-app",
+  "name": "location-tracker-app",
   "version": "1.0.0",
-  "description": "",
+  "description": "Location Tracking Application with Next.js, SQLite and OwnTracks integration",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
