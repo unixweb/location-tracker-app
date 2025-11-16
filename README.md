@@ -30,6 +30,7 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 ### Admin-Panel (Login erforderlich)
 - 🔐 **Authentifizierung** - NextAuth.js v5 mit bcrypt-Hashing
 - 📊 **Dashboard** - Übersicht über Geräte, Statistiken und Datenbankstatus
+- ⏱️ **System Status** - Live-Uptime, Memory Usage, Runtime Info
 - 📱 **Device Management** - Geräte hinzufügen, bearbeiten, löschen
 - 💾 **Datenbank-Wartung**:
   - 🔄 Manueller Sync von n8n
@@ -37,7 +38,7 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
   - ⚡ Datenbank-Optimierung (VACUUM)
   - 📈 Detaillierte Statistiken
 - 🟢 **Online/Offline Status** - Echtzeit-Status (< 10 Min = Online)
-- 🔋 **Telemetrie-Daten** - Batterie, Geschwindigkeit, letzte Position
+- 🔋 **Telemetrie-Daten** - Batterie, Geschwindigkeit, letzte Position (speed=0 wird korrekt behandelt)
 
 ---
 
@@ -214,10 +215,31 @@ Die App verwendet einen **Hybrid-Ansatz**:
 4. **Duplikate** werden durch UNIQUE Index verhindert
 5. **Antwort** kommt aus lokalem SQLite Cache
 
-**Vorteil:**
+**Vorteile:**
 - Schnelle Antwortzeiten (SQLite statt n8n)
 - Längere Zeiträume abrufbar (24h+)
-- Funktioniert auch wenn n8n nicht erreichbar ist
+- Funktioniert auch wenn n8n nicht erreichbar ist (Fallback auf n8n-Daten)
+- Duplikate werden automatisch verhindert (UNIQUE Index)
+
+### Datenvalidierung & Normalisierung
+
+Die App behandelt spezielle Fälle bei speed/battery korrekt:
+
+**speed = 0 Behandlung:**
+- n8n sendet `speed: 0` (gültig - Gerät steht still)
+- Wird mit `typeof === 'number'` Check explizit als `0` gespeichert
+- Wird NICHT zu `null` konvertiert (wichtig für Telemetrie)
+- Popup zeigt "Speed: 0.0 km/h" an
+
+**n8n Fallback:**
+- Wenn DB leer ist, gibt API direkt n8n-Daten zurück
+- Alle Filter (username, timeRangeHours) funktionieren auch mit Fallback
+- Ermöglicht sofortigen Betrieb ohne DB-Initialisierung
+
+**Debug-Logging:**
+- Server-Logs zeigen n8n Sync-Aktivität
+- Browser Console zeigt Daten-Flow (MapView, Popup)
+- Hilfreich für Troubleshooting
 
 ---
 
@@ -267,6 +289,11 @@ Die App verwendet einen **Hybrid-Ansatz**:
 **GET /api/locations/stats**
 - Detaillierte DB-Statistiken
 - Größe, Zeitraum, Locations pro Device
+
+**GET /api/system/status**
+- System-Status abrufen
+- Returns: Uptime, Memory Usage, Node.js Version, Platform
+- Auto-Refresh: Alle 10 Sekunden im Admin-Panel
 
 ---
 
@@ -427,7 +454,8 @@ poc-app/
 │   ├── api/
 │   │   ├── auth/[...nextauth]/      # NextAuth API
 │   │   ├── devices/                 # Device CRUD
-│   │   └── locations/               # Location API + Sync/Cleanup/Stats
+│   │   ├── locations/               # Location API + Sync/Cleanup/Stats
+│   │   └── system/status/           # System Status (Uptime, Memory)
 │   ├── admin/
 │   │   ├── devices/                 # Device Management
 │   │   └── page.tsx                 # Dashboard
