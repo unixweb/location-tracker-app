@@ -221,10 +221,12 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
                 opacity={0.6}
               />
 
-              {/* Markers */}
-              {sortedLocs.map((loc, idx) => {
-                // Debug: Log for first location only (newest)
-                if (idx === 0) {
+              {/* Markers - reverse for rendering (oldest first = back, newest last = front/top) */}
+              {[...sortedLocs].reverse().map((loc, idx, arr) => {
+                const isLatest = idx === arr.length - 1; // Last in reversed = newest (on top)
+
+                // Debug: Log for latest location only
+                if (isLatest) {
                   console.log('[Popup Debug] Latest location for', device.name, {
                     speed: loc.speed,
                     speed_type: typeof loc.speed,
@@ -237,11 +239,11 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
 
                 return (
                   <Marker
-                    key={`${deviceId}-${idx}`}
+                    key={`${deviceId}-${loc.timestamp}-${idx}`}
                     position={[Number(loc.latitude), Number(loc.longitude)]}
                     icon={createCustomIcon(
                       device.color,
-                      idx === 0 // First item is newest (DESC sort)
+                      isLatest
                     )}
                   >
                     <Popup>
