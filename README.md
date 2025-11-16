@@ -2,6 +2,8 @@
 
 Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTracks Integration, SQLite-Datenbank, Admin-Panel und Authentifizierung.
 
+![Location Tracker Screenshot](https://e.pcloud.link/publink/show?code=XZTG7AZEROkk0HTvVbowWL97NaXbk5TxNQX)
+
 ## 📋 Inhaltsverzeichnis
 
 - [Features](#-features)
