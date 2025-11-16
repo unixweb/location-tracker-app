@@ -47,6 +47,39 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Add animation styles for latest marker
+  useEffect(() => {
+    // Inject CSS animation for marker pulse effect
+    if (typeof document !== 'undefined') {
+      const styleId = 'marker-animation-styles';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          @keyframes marker-pulse {
+            0% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.15);
+              opacity: 0.8;
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          .latest-marker {
+            animation: marker-pulse 2s ease-in-out infinite;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
+
   // Fetch devices from API
   useEffect(() => {
     const fetchDevices = async () => {
@@ -293,6 +326,6 @@ function createCustomIcon(color: string, isLatest: boolean) {
     html: svg,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
-    className: "custom-marker-icon",
+    className: isLatest ? "custom-marker-icon latest-marker" : "custom-marker-icon",
   });
 }
