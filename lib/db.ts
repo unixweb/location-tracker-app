@@ -300,6 +300,18 @@ export const locationDb = {
     let insertedCount = 0;
     const insertMany = db.transaction((locations: Location[]) => {
       for (const loc of locations) {
+        const batteryValue = loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null;
+        const speedValue = loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null;
+
+        // Debug log
+        console.log('[DB Insert Debug]', {
+          username: loc.username,
+          speed_in: loc.speed,
+          speed_out: speedValue,
+          battery_in: loc.battery,
+          battery_out: batteryValue
+        });
+
         const result = stmt.run(
           loc.latitude,
           loc.longitude,
@@ -311,8 +323,8 @@ export const locationDb = {
           loc.marker_label || null,
           loc.display_time || null,
           loc.chat_id || 0,
-          loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null,
-          loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null
+          batteryValue,
+          speedValue
         );
         insertedCount += result.changes;
       }
