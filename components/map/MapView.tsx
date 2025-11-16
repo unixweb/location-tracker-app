@@ -193,7 +193,7 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
                           <span>🔋</span> Battery: {loc.battery}%
                         </p>
                       )}
-                      {loc.speed != null && Number(loc.speed) > 0 && (
+                      {loc.speed != null && (
                         <p className="flex items-center gap-1">
                           <span>🚗</span> Speed: {Number(loc.speed).toFixed(1)} km/h
                         </p>
