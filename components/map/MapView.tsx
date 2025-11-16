@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Location, LocationResponse } from "@/types/location";
 import { getDevice, DEFAULT_DEVICE } from "@/lib/devices";
 import L from "leaflet";
@@ -11,11 +11,13 @@ import {
   Popup,
   Polyline,
   LayersControl,
+  useMap,
 } from "react-leaflet";
 
 interface MapViewProps {
   selectedDevice: string;
   timeFilter: number; // in hours, 0 = all
+  isPaused: boolean;
 }
 
 interface DeviceInfo {
@@ -24,11 +26,26 @@ interface DeviceInfo {
   color: string;
 }
 
-export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
+// Component to auto-center map to latest position
+function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zoom: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoom, { animate: true });
+    }
+  }, [center, zoom, map]);
+
+  return null;
+}
+
+export default function MapView({ selectedDevice, timeFilter, isPaused }: MapViewProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [devices, setDevices] = useState<Record<string, DeviceInfo>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch devices from API
   useEffect(() => {
@@ -58,6 +75,8 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   // Fetch locations
   useEffect(() => {
     const fetchLocations = async () => {
+      if (isPaused) return; // Skip fetching when paused
+
       try {
         // Build query params
         const params = new URLSearchParams();
@@ -86,6 +105,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
             speed_is_undefined: loc.speed === undefined,
             battery: loc.battery,
           })));
+
+          // Auto-center to latest location
+          const latest = data.history[0];
+          if (latest && latest.latitude && latest.longitude) {
+            setMapCenter([Number(latest.latitude), Number(latest.longitude)]);
+          }
         }
 
         setLocations(data.history || []);
@@ -99,10 +124,19 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
     };
 
     fetchLocations();
-    const interval = setInterval(fetchLocations, 5000); // Refresh every 5s
 
-    return () => clearInterval(interval);
-  }, [selectedDevice, timeFilter]);
+    // Store interval reference for pause/resume control
+    if (!isPaused) {
+      intervalRef.current = setInterval(fetchLocations, 5000); // Refresh every 5s
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [selectedDevice, timeFilter, isPaused]);
 
   // No client-side filtering needed - API already filters by username and timeRangeHours
   // Filter out locations without username (should not happen, but TypeScript safety)
@@ -139,6 +173,9 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
         zoom={12}
         style={{ height: "100%", width: "100%" }}
       >
+        {/* Auto-center to latest position */}
+        <SetViewOnChange center={mapCenter} zoom={14} />
+
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Standard">
             <TileLayer
@@ -165,16 +202,17 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
         {Object.entries(deviceGroups).map(([deviceId, locs]) => {
           // Use device from API if available, fallback to hardcoded
           const device = devices[deviceId] || getDevice(deviceId);
+          // Sort DESC (newest first) - same as API
           const sortedLocs = [...locs].sort(
             (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           );
 
           return (
             <div key={deviceId}>
-              {/* Polyline for path */}
+              {/* Polyline for path - reverse for chronological drawing (oldest to newest) */}
               <Polyline
-                positions={sortedLocs.map((loc) => [
+                positions={[...sortedLocs].reverse().map((loc) => [
                   Number(loc.latitude),
                   Number(loc.longitude),
                 ])}
@@ -183,10 +221,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
                 opacity={0.6}
               />
 
-              {/* Markers */}
-              {sortedLocs.map((loc, idx) => {
-                // Debug: Log for last location only
-                if (idx === sortedLocs.length - 1) {
+              {/* Markers - reverse for rendering (oldest first = back, newest last = front/top) */}
+              {[...sortedLocs].reverse().map((loc, idx, arr) => {
+                const isLatest = idx === arr.length - 1; // Last in reversed = newest (on top)
+
+                // Debug: Log for latest location only
+                if (isLatest) {
                   console.log('[Popup Debug] Latest location for', device.name, {
                     speed: loc.speed,
                     speed_type: typeof loc.speed,
@@ -199,11 +239,11 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
 
                 return (
                   <Marker
-                    key={`${deviceId}-${idx}`}
+                    key={`${deviceId}-${loc.timestamp}-${idx}`}
                     position={[Number(loc.latitude), Number(loc.longitude)]}
                     icon={createCustomIcon(
                       device.color,
-                      idx === sortedLocs.length - 1
+                      isLatest
                     )}
                   >
                     <Popup>

@@ -25,6 +25,7 @@ const TIME_FILTERS = [
 export default function Home() {
   const [selectedDevice, setSelectedDevice] = useState<string>("all");
   const [timeFilter, setTimeFilter] = useState<number>(1); // Default 1 hour
+  const [isPaused, setIsPaused] = useState(false);
 
   return (
     <div className="h-screen flex flex-col">
@@ -32,7 +33,7 @@ export default function Home() {
       <div className="bg-white shadow-md p-4 flex items-center justify-between">
         <h1 className="text-xl font-bold">Location Tracker</h1>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           {/* Device Filter */}
           <div>
             <label className="text-sm font-medium mr-2">Device:</label>
@@ -66,6 +67,18 @@ export default function Home() {
             </select>
           </div>
 
+          {/* Pause/Resume Button */}
+          <button
+            onClick={() => setIsPaused(!isPaused)}
+            className={`px-4 py-1 rounded-md font-semibold transition-colors ${
+              isPaused
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            {isPaused ? "▶ Resume" : "⏸ Pause"}
+          </button>
+
           {/* Admin Link */}
           <a
             href="/admin"
@@ -78,7 +91,7 @@ export default function Home() {
 
       {/* Map */}
       <div className="flex-1">
-        <MapView selectedDevice={selectedDevice} timeFilter={timeFilter} />
+        <MapView selectedDevice={selectedDevice} timeFilter={timeFilter} isPaused={isPaused} />
       </div>
     </div>
   );
