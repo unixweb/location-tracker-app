@@ -70,7 +70,7 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 1. **Repository klonen**
 ```bash
 git clone <repo-url>
-cd claude-code-web/poc-app
+cd location-tracker-app
 ```
 
 2. **Dependencies installieren**
