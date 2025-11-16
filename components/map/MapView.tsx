@@ -59,8 +59,18 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        // Fetch directly from n8n (client-side) instead of Next.js API route
-        const response = await fetch("https://n8n.unixweb.home64.de/webhook/location");
+        // Build query params
+        const params = new URLSearchParams();
+        if (selectedDevice !== "all") {
+          params.set("username", selectedDevice);
+        }
+        if (timeFilter > 0) {
+          params.set("timeRangeHours", timeFilter.toString());
+        }
+        params.set("limit", "5000"); // Fetch more data for better history
+
+        // Fetch from local SQLite API (with auto-sync from n8n)
+        const response = await fetch(`/api/locations?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch locations");
 
         const data: LocationResponse = await response.json();
@@ -78,27 +88,10 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
     const interval = setInterval(fetchLocations, 5000); // Refresh every 5s
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDevice, timeFilter]);
 
-  // Filter locations
-  const filteredLocations = locations.filter((loc) => {
-    // Filter MQTT-only devices (user_id == 0, can be string or number)
-    if (loc.user_id != 0) return false;
-
-    // Filter by selected device
-    if (selectedDevice !== "all" && loc.username !== selectedDevice) {
-      return false;
-    }
-
-    // Filter by time
-    if (timeFilter > 0) {
-      const locTime = new Date(loc.timestamp).getTime();
-      const cutoff = Date.now() - timeFilter * 60 * 60 * 1000;
-      if (locTime < cutoff) return false;
-    }
-
-    return true;
-  });
+  // No client-side filtering needed - API already filters by username and timeRangeHours
+  const filteredLocations = locations;
 
   // Group by device
   const deviceGroups = filteredLocations.reduce((acc, loc) => {

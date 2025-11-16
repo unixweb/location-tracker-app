@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { deviceDb } from "@/lib/db";
-import type { LocationResponse } from "@/types/location";
-
-const N8N_API_URL = "https://n8n.unixweb.home64.de/webhook/location";
+import { deviceDb, locationDb } from "@/lib/db";
 
 // GET /api/devices - List all devices (from database)
 export async function GET() {
@@ -17,23 +14,20 @@ export async function GET() {
     // Get devices from database
     const devices = deviceDb.findAll();
 
-    // Fetch location data from n8n to get latest locations
-    let locationData: LocationResponse | null = null;
-    try {
-      const response = await fetch(N8N_API_URL, { cache: "no-store" });
-      if (response.ok) {
-        locationData = await response.json();
-      }
-    } catch (error) {
-      console.error("Failed to fetch locations:", error);
-    }
+    // Fetch location data from local SQLite cache (24h history)
+    const allLocations = locationDb.findMany({
+      user_id: 0, // MQTT devices only
+      timeRangeHours: 24, // Last 24 hours
+      limit: 10000,
+    });
 
     // Merge devices with latest location data
     const devicesWithLocation = devices.map((device) => {
-      // Find latest location for this device
-      const latestLocation = locationData?.history
-        ?.filter((loc) => loc.username === device.id)
-        ?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      // Find all locations for this device
+      const deviceLocations = allLocations.filter((loc) => loc.username === device.id);
+
+      // Get latest location (first one, already sorted by timestamp DESC)
+      const latestLocation = deviceLocations[0] || null;
 
       return {
         id: device.id,
@@ -44,9 +38,9 @@ export async function GET() {
         updatedAt: device.updatedAt,
         description: device.description,
         icon: device.icon,
-        latestLocation: latestLocation || null,
+        latestLocation: latestLocation,
         _count: {
-          locations: locationData?.history?.filter((loc) => loc.username === device.id).length || 0,
+          locations: deviceLocations.length,
         },
       };
     });
