@@ -69,7 +69,7 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 
 1. **Repository klonen**
 ```bash
-git clone <repo-url>
+git clone https://github.com/unixweb/location-tracker-app.git
 cd location-tracker-app
 ```
 
