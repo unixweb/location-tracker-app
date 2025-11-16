@@ -74,6 +74,20 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
         if (!response.ok) throw new Error("Failed to fetch locations");
 
         const data: LocationResponse = await response.json();
+
+        // Debug: Log last 3 locations to see speed/battery values
+        if (data.history && data.history.length > 0) {
+          console.log('[MapView Debug] Last 3 locations:', data.history.slice(0, 3).map(loc => ({
+            username: loc.username,
+            timestamp: loc.timestamp,
+            speed: loc.speed,
+            speed_type: typeof loc.speed,
+            speed_is_null: loc.speed === null,
+            speed_is_undefined: loc.speed === undefined,
+            battery: loc.battery,
+          })));
+        }
+
         setLocations(data.history || []);
         setError(null);
       } catch (err) {
