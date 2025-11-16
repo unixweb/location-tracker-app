@@ -1,23 +1,23 @@
-# n8n Integration Guide
+# n8n Integration Anleitung
 
-## Overview
+## Übersicht
 
-The poc-app now uses a **dual-database architecture** with local SQLite caching:
+Die poc-app verwendet nun eine **Dual-Datenbank-Architektur** mit lokalem SQLite-Caching:
 
-- **database.sqlite** - User accounts, device management (critical data, few writes)
-- **locations.sqlite** - Location tracking cache (high-volume writes, disposable)
+- **database.sqlite** - Benutzerkonten, Geräteverwaltung (kritische Daten, wenige Schreibvorgänge)
+- **locations.sqlite** - Standortverfolgung Cache (viele Schreibvorgänge, temporär)
 
-This architecture provides:
-- **Performance**: Fast queries from local SQLite instead of NocoDB API
-- **Scalability**: Unlimited history without pagination limits
-- **Resilience**: Auth system isolated from tracking database
-- **Flexibility**: Easy cleanup of old data
+Diese Architektur bietet:
+- **Performance**: Schnelle Abfragen aus lokalem SQLite anstatt NocoDB API
+- **Skalierbarkeit**: Unbegrenzter Verlauf ohne Paginierungslimits
+- **Resilienz**: Auth-System isoliert von der Tracking-Datenbank
+- **Flexibilität**: Einfaches Löschen alter Daten
 
 ---
 
-## Required n8n Workflow Changes
+## Erforderliche n8n Workflow-Änderungen
 
-### Current Flow (OLD)
+### Aktueller Flow (ALT)
 
 ```
 MQTT Trigger (owntracks/#)
@@ -27,7 +27,7 @@ MQTT Location verarbeiten (Parse & Transform)
 Speichere in NocoDB
 ```
 
-### New Flow (REQUIRED)
+### Neuer Flow (ERFORDERLICH)
 
 ```
 MQTT Trigger (owntracks/#)
@@ -36,63 +36,63 @@ MQTT Location verarbeiten (Parse & Transform)
     ↓
 Speichere in NocoDB
     ↓
-[NEW] Push to Next.js Cache (HTTP Request)
+[NEU] Push to Next.js Cache (HTTP Request)
 ```
 
 ---
 
-## Step-by-Step: Add HTTP Request Node
+## Schritt-für-Schritt: HTTP Request Node hinzufügen
 
-### 1. Add HTTP Request Node
+### 1. HTTP Request Node hinzufügen
 
-After the "Speichere in NocoDB" node, add a new **HTTP Request** node:
+Nach dem "Speichere in NocoDB" Node einen neuen **HTTP Request** Node hinzufügen:
 
-**Node Configuration:**
+**Node-Konfiguration:**
 - **Name**: "Push to Next.js Cache"
-- **Method**: POST
-- **URL**: `https://your-nextjs-domain.com/api/locations/ingest`
-- **Authentication**: None (add API key in production!)
+- **Methode**: POST
+- **URL**: `https://deine-nextjs-domain.com/api/locations/ingest`
+- **Authentifizierung**: None (API-Key in Produktion hinzufügen!)
 - **Body Content Type**: JSON
 - **Specify Body**: Using Fields Below
 
-### 2. Map Fields
+### 2. Felder zuordnen
 
-In the "Body Parameters" section, map the following fields:
+Im Bereich "Body Parameters" die folgenden Felder zuordnen:
 
-| Parameter | Value (Expression) | Description |
+| Parameter | Wert (Expression) | Beschreibung |
 |-----------|-------------------|-------------|
-| `latitude` | `{{ $json.latitude }}` | Geographic latitude |
-| `longitude` | `{{ $json.longitude }}` | Geographic longitude |
-| `timestamp` | `{{ $json.timestamp }}` | ISO 8601 timestamp |
-| `user_id` | `{{ $json.user_id }}` | User ID (0 for MQTT) |
+| `latitude` | `{{ $json.latitude }}` | Geografischer Breitengrad |
+| `longitude` | `{{ $json.longitude }}` | Geografischer Längengrad |
+| `timestamp` | `{{ $json.timestamp }}` | ISO 8601 Zeitstempel |
+| `user_id` | `{{ $json.user_id }}` | Benutzer-ID (0 für MQTT) |
 | `first_name` | `{{ $json.first_name }}` | Tracker ID |
-| `last_name` | `{{ $json.last_name }}` | Source type |
-| `username` | `{{ $json.username }}` | Device username |
-| `marker_label` | `{{ $json.marker_label }}` | Display label |
-| `display_time` | `{{ $json.display_time }}` | Formatted time |
-| `chat_id` | `{{ $json.chat_id }}` | Chat ID (0 for MQTT) |
-| `battery` | `{{ $json.battery }}` | Battery percentage |
-| `speed` | `{{ $json.speed }}` | Velocity (m/s) |
+| `last_name` | `{{ $json.last_name }}` | Quelltyp |
+| `username` | `{{ $json.username }}` | Geräte-Benutzername |
+| `marker_label` | `{{ $json.marker_label }}` | Anzeige-Label |
+| `display_time` | `{{ $json.display_time }}` | Formatierte Zeit |
+| `chat_id` | `{{ $json.chat_id }}` | Chat-ID (0 für MQTT) |
+| `battery` | `{{ $json.battery }}` | Batterieprozent |
+| `speed` | `{{ $json.speed }}` | Geschwindigkeit (m/s) |
 
-### 3. Error Handling (Optional but Recommended)
+### 3. Fehlerbehandlung (Optional aber empfohlen)
 
-Add an **Error Trigger** node to handle failed API calls:
+Einen **Error Trigger** Node hinzufügen, um fehlgeschlagene API-Aufrufe zu behandeln:
 
 - **Workflow**: Current Workflow
 - **Error Type**: All Errors
 - **Connected to**: Push to Next.js Cache node
 
-Add a **Slack/Email** notification to alert you of failures.
+Einen **Slack/Email** Benachrichtigungs-Node hinzufügen, um über Fehler informiert zu werden.
 
 ---
 
-## Example n8n HTTP Request Node (JSON)
+## Beispiel n8n HTTP Request Node (JSON)
 
 ```json
 {
   "parameters": {
     "method": "POST",
-    "url": "https://your-domain.com/api/locations/ingest",
+    "url": "https://deine-domain.com/api/locations/ingest",
     "authentication": "none",
     "options": {},
     "bodyParametersJson": "={{ {\n  \"latitude\": $json.latitude,\n  \"longitude\": $json.longitude,\n  \"timestamp\": $json.timestamp,\n  \"user_id\": $json.user_id,\n  \"first_name\": $json.first_name,\n  \"last_name\": $json.last_name,\n  \"username\": $json.username,\n  \"marker_label\": $json.marker_label,\n  \"display_time\": $json.display_time,\n  \"chat_id\": $json.chat_id,\n  \"battery\": $json.battery,\n  \"speed\": $json.speed\n} }}"
@@ -106,12 +106,12 @@ Add a **Slack/Email** notification to alert you of failures.
 
 ---
 
-## Testing
+## Testen
 
-### 1. Test the Ingest Endpoint
+### 1. Ingest-Endpunkt testen
 
 ```bash
-curl -X POST https://your-domain.com/api/locations/ingest \
+curl -X POST https://deine-domain.com/api/locations/ingest \
   -H "Content-Type: application/json" \
   -d '{
     "latitude": 48.1351,
@@ -119,13 +119,13 @@ curl -X POST https://your-domain.com/api/locations/ingest \
     "timestamp": "2024-01-15T10:30:00Z",
     "user_id": 0,
     "username": "10",
-    "marker_label": "Test Device",
+    "marker_label": "Test Gerät",
     "battery": 85,
     "speed": 2.5
   }'
 ```
 
-Expected response:
+Erwartete Antwort:
 ```json
 {
   "success": true,
@@ -134,29 +134,29 @@ Expected response:
 }
 ```
 
-### 2. Verify Data
+### 2. Daten überprüfen
 
 ```bash
-curl https://your-domain.com/api/locations?username=10&timeRangeHours=1
+curl https://deine-domain.com/api/locations?username=10&timeRangeHours=1
 ```
 
-### 3. Check Stats
+### 3. Statistiken prüfen
 
 ```bash
-curl https://your-domain.com/api/locations/ingest
+curl https://deine-domain.com/api/locations/ingest
 ```
 
 ---
 
-## Production Considerations
+## Produktions-Überlegungen
 
-### 1. Add API Key Authentication
+### 1. API-Key-Authentifizierung hinzufügen
 
-**Update** `app/api/locations/ingest/route.ts`:
+**Aktualisieren** von `app/api/locations/ingest/route.ts`:
 
 ```typescript
 export async function POST(request: NextRequest) {
-  // Validate API key
+  // API-Key validieren
   const apiKey = request.headers.get('x-api-key');
   if (apiKey !== process.env.N8N_API_KEY) {
     return NextResponse.json(
@@ -165,32 +165,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // ... rest of the code
+  // ... restlicher Code
 }
 ```
 
-**Update n8n HTTP Request Node:**
-- Add Header: `x-api-key` = `your-secret-key`
+**n8n HTTP Request Node aktualisieren:**
+- Header hinzufügen: `x-api-key` = `dein-secret-key`
 
-### 2. Set Up Automatic Cleanup
+### 2. Automatisches Aufräumen einrichten
 
-Add a cron job to delete old data (keeps database size manageable):
+Einen Cron-Job hinzufügen, um alte Daten zu löschen (hält die Datenbankgröße überschaubar):
 
 ```bash
 # /etc/crontab
-# Daily cleanup at 2 AM - delete data older than 7 days
-0 2 * * * cd /path/to/poc-app && node scripts/cleanup-old-locations.js 168
+# Tägliche Bereinigung um 2 Uhr morgens - löscht Daten älter als 7 Tage
+0 2 * * * cd /pfad/zu/poc-app && node scripts/cleanup-old-locations.js 168
 ```
 
-Or use a systemd timer, PM2 cron, or similar.
+Oder verwende einen systemd Timer, PM2 Cron oder ähnliches.
 
-### 3. Monitor Database Size
+### 3. Datenbankgröße überwachen
 
 ```bash
-# Check database stats
-curl https://your-domain.com/api/locations/ingest
+# Datenbankstatistiken prüfen
+curl https://deine-domain.com/api/locations/ingest
 
-# Expected output:
+# Erwartete Ausgabe:
 # {
 #   "total": 5432,
 #   "oldest": "2024-01-08T10:00:00Z",
@@ -199,89 +199,89 @@ curl https://your-domain.com/api/locations/ingest
 # }
 ```
 
-### 4. Backup Strategy
+### 4. Backup-Strategie
 
-**database.sqlite** (critical):
-- Daily automated backups
-- Keep 30-day retention
+**database.sqlite** (kritisch):
+- Tägliche automatisierte Backups
+- 30-Tage Aufbewahrung
 
-**locations.sqlite** (cache):
-- Optional: Weekly backups
-- Or no backups (data exists in NocoDB)
+**locations.sqlite** (Cache):
+- Optional: Wöchentliche Backups
+- Oder keine Backups (Daten existieren in NocoDB)
 
 ---
 
-## Migration: Importing Existing NocoDB Data
+## Migration: Vorhandene NocoDB-Daten importieren
 
-If you have existing location data in NocoDB, you can import it:
+Falls du bereits Standortdaten in NocoDB hast, kannst du diese importieren:
 
-### Option 1: Export CSV from NocoDB
+### Option 1: CSV aus NocoDB exportieren
 
-1. Export data from NocoDB as CSV
-2. Convert to JSON
-3. POST to `/api/locations/ingest` in batches
+1. Daten aus NocoDB als CSV exportieren
+2. In JSON konvertieren
+3. In Batches an `/api/locations/ingest` senden (POST)
 
-### Option 2: Direct NocoDB API Import (recommended)
+### Option 2: Direkter NocoDB API Import (empfohlen)
 
-Create a script `scripts/import-from-nocodb.js`:
+Ein Skript `scripts/import-from-nocodb.js` erstellen:
 
 ```javascript
 const fetch = require('node-fetch');
 const { locationDb } = require('../lib/db');
 
 async function importFromNocoDB() {
-  // Fetch all data from NocoDB API
+  // Alle Daten von NocoDB API abrufen
   const response = await fetch('https://n8n.unixweb.home64.de/webhook/location');
   const data = await response.json();
 
-  // Bulk insert into locations.sqlite
+  // Bulk-Insert in locations.sqlite
   const count = locationDb.createMany(data.history);
-  console.log(`Imported ${count} locations`);
+  console.log(`Importiert: ${count} Standorte`);
 }
 
 importFromNocoDB().catch(console.error);
 ```
 
-Run: `node scripts/import-from-nocodb.js`
+Ausführen: `node scripts/import-from-nocodb.js`
 
 ---
 
-## Troubleshooting
+## Fehlerbehebung
 
-### Issue: "directory does not exist" error
+### Problem: "directory does not exist" Fehler
 
-**Solution**: Run the init script:
+**Lösung**: Init-Skript ausführen:
 ```bash
 cd poc-app
 node scripts/init-locations-db.js
 ```
 
-### Issue: n8n returns 500 error when pushing to Next.js
+### Problem: n8n gibt 500-Fehler beim Push zu Next.js zurück
 
-**Check**:
-1. Next.js app is running and accessible
-2. URL in n8n is correct
-3. Check Next.js logs: `pm2 logs` or `docker logs`
+**Prüfen**:
+1. Next.js App läuft und ist erreichbar
+2. URL in n8n ist korrekt
+3. Next.js Logs prüfen: `pm2 logs` oder `docker logs`
 
-### Issue: No data appearing in frontend
+### Problem: Keine Daten im Frontend sichtbar
 
-**Verify**:
-1. Data is in SQLite: `curl https://your-domain.com/api/locations/ingest`
-2. API returns data: `curl https://your-domain.com/api/locations`
-3. Check browser console for errors
+**Überprüfen**:
+1. Daten sind in SQLite: `curl https://deine-domain.com/api/locations/ingest`
+2. API gibt Daten zurück: `curl https://deine-domain.com/api/locations`
+3. Browser-Konsole auf Fehler prüfen
 
-### Issue: Database growing too large
+### Problem: Datenbank wird zu groß
 
-**Solution**: Run cleanup script:
+**Lösung**: Cleanup-Skript ausführen:
 ```bash
-node scripts/cleanup-old-locations.js 168  # Keep 7 days
+node scripts/cleanup-old-locations.js 168  # Behalte 7 Tage
 ```
 
-Or reduce retention period in cron job.
+Oder die Aufbewahrungsdauer im Cron-Job reduzieren.
 
 ---
 
-## Architecture Diagram
+## Architektur-Diagramm
 
 ```
 ┌─────────────────┐
@@ -312,10 +312,11 @@ Or reduce retention period in cron job.
          │
          ▼
 ┌─────────────────┐
-│ locations.sqlite│ (Local Cache)
-│  - Fast queries │
-│  - Auto cleanup │
-│  - Isolated     │
+│ locations.sqlite│ (Lokaler Cache)
+│  - Schnelle     │
+│    Abfragen     │
+│  - Auto Cleanup │
+│  - Isoliert     │
 └────────┬────────┘
          │
          ▼
@@ -328,20 +329,21 @@ Or reduce retention period in cron job.
          ▼
 ┌─────────────────┐
 │   Map UI        │
-│  - 24h history  │
-│  - Fast filters │
-│  - Real-time    │
+│  - 24h Verlauf  │
+│  - Schnelle     │
+│    Filter       │
+│  - Echtzeit     │
 └─────────────────┘
 ```
 
 ---
 
-## Summary
+## Zusammenfassung
 
-✅ **Dual database** isolates critical auth from high-volume tracking
-✅ **Local cache** enables fast 24h+ queries without NocoDB pagination limits
-✅ **WAL mode** provides crash resilience and better concurrency
-✅ **Auto cleanup** keeps database size manageable
-✅ **Backward compatible** - same API response format as n8n webhook
+✅ **Dual-Datenbank** isoliert kritische Auth von hochvolumiger Standortverfolgung
+✅ **Lokaler Cache** ermöglicht schnelle 24h+ Abfragen ohne NocoDB-Paginierungslimits
+✅ **WAL-Modus** bietet Absturzsicherheit und bessere Nebenläufigkeit
+✅ **Auto Cleanup** hält die Datenbankgröße überschaubar
+✅ **Rückwärtskompatibel** - gleiches API-Antwortformat wie n8n Webhook
 
-🚀 **Next.js app is now production-ready with unlimited location history!**
+🚀 **Die Next.js App ist jetzt produktionsreif mit unbegrenztem Standortverlauf!**
