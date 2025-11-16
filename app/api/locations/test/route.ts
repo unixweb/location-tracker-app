@@ -52,7 +52,15 @@ export async function POST(request: Request) {
       timestamp: now.toISOString(),
       user_id: 0,
       username: String(username),
-      display_time: now.toLocaleString('de-DE'),
+      display_time: now.toLocaleString('de-DE', {
+        timeZone: 'Europe/Berlin',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
       chat_id: 0,
       first_name: null,
       last_name: null,

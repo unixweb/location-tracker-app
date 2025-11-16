@@ -31,7 +31,15 @@ try {
 
   const now = new Date();
   const timestamp = now.toISOString();
-  const displayTime = now.toLocaleString('de-DE');
+  const displayTime = now.toLocaleString('de-DE', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 
   const result = stmt.run(
     parseFloat(lat),
