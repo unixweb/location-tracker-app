@@ -36,6 +36,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Debug logging for speed and battery values
+    console.log('[Ingest Debug] Received locations:', locations.map(loc => ({
+      username: loc.username,
+      speed: loc.speed,
+      speed_type: typeof loc.speed,
+      battery: loc.battery,
+      battery_type: typeof loc.battery
+    })));
+
     // Validate required fields
     for (const loc of locations) {
       if (!loc.latitude || !loc.longitude || !loc.timestamp) {
