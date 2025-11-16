@@ -267,8 +267,8 @@ export const locationDb = {
       location.marker_label || null,
       location.display_time || null,
       location.chat_id || 0,
-      location.battery || null,
-      location.speed || null
+      location.battery ?? null,
+      location.speed ?? null
     );
 
     // If changes is 0, it was a duplicate and ignored
@@ -311,8 +311,8 @@ export const locationDb = {
           loc.marker_label || null,
           loc.display_time || null,
           loc.chat_id || 0,
-          loc.battery || null,
-          loc.speed || null
+          loc.battery ?? null,
+          loc.speed ?? null
         );
         insertedCount += result.changes;
       }
