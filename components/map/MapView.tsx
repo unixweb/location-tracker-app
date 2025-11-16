@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Location, LocationResponse } from "@/types/location";
 import { getDevice, DEFAULT_DEVICE } from "@/lib/devices";
 import L from "leaflet";
@@ -11,6 +11,7 @@ import {
   Popup,
   Polyline,
   LayersControl,
+  useMap,
 } from "react-leaflet";
 
 interface MapViewProps {
@@ -24,11 +25,27 @@ interface DeviceInfo {
   color: string;
 }
 
+// Component to auto-center map to latest position
+function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zoom: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoom, { animate: true });
+    }
+  }, [center, zoom, map]);
+
+  return null;
+}
+
 export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [devices, setDevices] = useState<Record<string, DeviceInfo>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch devices from API
   useEffect(() => {
@@ -58,6 +75,8 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   // Fetch locations
   useEffect(() => {
     const fetchLocations = async () => {
+      if (isPaused) return; // Skip fetching when paused
+
       try {
         // Build query params
         const params = new URLSearchParams();
@@ -86,6 +105,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
             speed_is_undefined: loc.speed === undefined,
             battery: loc.battery,
           })));
+
+          // Auto-center to latest location
+          const latest = data.history[0];
+          if (latest && latest.latitude && latest.longitude) {
+            setMapCenter([Number(latest.latitude), Number(latest.longitude)]);
+          }
         }
 
         setLocations(data.history || []);
@@ -99,10 +124,19 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
     };
 
     fetchLocations();
-    const interval = setInterval(fetchLocations, 5000); // Refresh every 5s
 
-    return () => clearInterval(interval);
-  }, [selectedDevice, timeFilter]);
+    // Store interval reference for pause/resume control
+    if (!isPaused) {
+      intervalRef.current = setInterval(fetchLocations, 5000); // Refresh every 5s
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [selectedDevice, timeFilter, isPaused]);
 
   // No client-side filtering needed - API already filters by username and timeRangeHours
   // Filter out locations without username (should not happen, but TypeScript safety)
@@ -133,12 +167,27 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
+      {/* Pause/Resume Toggle Button */}
+      <button
+        onClick={() => setIsPaused(!isPaused)}
+        className={`absolute top-4 left-4 z-[1000] px-4 py-2 rounded-lg shadow-lg font-semibold transition-all ${
+          isPaused
+            ? "bg-green-500 hover:bg-green-600 text-white"
+            : "bg-red-500 hover:bg-red-600 text-white"
+        }`}
+      >
+        {isPaused ? "▶ Resume" : "⏸ Pause"}
+      </button>
+
       <MapContainer
         center={[48.1351, 11.582]}
         zoom={12}
         style={{ height: "100%", width: "100%" }}
       >
+        {/* Auto-center to latest position */}
+        <SetViewOnChange center={mapCenter} zoom={14} />
+
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Standard">
             <TileLayer
