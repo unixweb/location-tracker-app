@@ -23,9 +23,12 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 - 🗺️ **Interaktive Karte** - Echtzeit-Standortverfolgung mit Leaflet.js
 - 🎨 **Mehrere Kartenansichten** - Standard, Satellit, Dark Mode
 - 🔍 **Device-Filterung** - Filtern nach Gerät und Zeitraum (1h, 3h, 6h, 12h, 24h)
-- 🔄 **Auto-Refresh** - Automatische Aktualisierung alle 5 Sekunden
+- 🔄 **Auto-Refresh** - Automatische Aktualisierung alle 5 Sekunden mit Pause/Resume Button
+- 🎯 **Auto-Center** - Karte zentriert automatisch auf neueste Position
+- ⏸️ **Pause/Resume** - Toggle-Button zum Stoppen/Starten des Auto-Refresh
 - 📱 **Responsive Design** - Optimiert für Desktop und Mobile
 - 📊 **Polylines** - Bewegungspfade mit farbcodierter Darstellung
+- 🎨 **Marker-Sortierung** - Neueste Position immer im Vordergrund (z-index optimiert)
 
 ### Admin-Panel (Login erforderlich)
 - 🔐 **Authentifizierung** - NextAuth.js v5 mit bcrypt-Hashing
@@ -418,7 +421,7 @@ node scripts/optimize-db.js
 npm run dev
 
 # Production Logs (PM2)
-pm2 logs poc-app
+pm2 logs location-tracker-app
 ```
 
 ---
@@ -460,7 +463,7 @@ npm run start
 npm install -g pm2
 
 # App starten
-pm2 start npm --name "poc-app" -- start
+pm2 start npm --name "location-tracker-app" -- start
 
 # Auto-Start bei Server-Neustart
 pm2 startup
@@ -509,7 +512,7 @@ server {
 ## 📂 Projektstruktur
 
 ```
-poc-app/
+location-tracker-app/
 ├── app/
 │   ├── api/
 │   │   ├── auth/[...nextauth]/      # NextAuth API
@@ -628,7 +631,7 @@ Diese App wurde von Prisma ORM auf direktes better-sqlite3 migriert:
 
 ## 📄 Lizenz
 
-Internal Use Only - POC Anwendung
+MIT License - Open Source
 
 ---
 
