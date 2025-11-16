@@ -57,14 +57,13 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          // Normalize data: Ensure speed and battery fields exist (even if 0)
+          // Normalize data: Ensure speed and battery fields exist (treat 0 explicitly)
           if (data.history && Array.isArray(data.history)) {
             data.history = data.history.map(loc => ({
               ...loc,
-              // If speed field is missing, set to null (not undefined)
-              speed: loc.speed !== undefined ? loc.speed : null,
-              // If battery field is missing, set to null (not undefined)
-              battery: loc.battery !== undefined ? loc.battery : null,
+              // Explicit handling: 0 is valid, only undefined/null → null
+              speed: typeof loc.speed === 'number' ? loc.speed : (loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null),
+              battery: typeof loc.battery === 'number' ? loc.battery : (loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null),
             }));
           }
 
