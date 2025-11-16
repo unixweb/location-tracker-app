@@ -188,12 +188,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
                       <p className="flex items-center gap-1">
                         <span>🕒</span> {loc.display_time}
                       </p>
-                      {loc.battery !== undefined && loc.battery !== null && (
+                      {loc.battery !== undefined && loc.battery !== null && loc.battery > 0 && (
                         <p className="flex items-center gap-1">
                           <span>🔋</span> Battery: {loc.battery}%
                         </p>
                       )}
-                      {loc.speed !== undefined && loc.speed !== null && (
+                      {loc.speed !== undefined && loc.speed !== null && loc.speed > 0 && (
                         <p className="flex items-center gap-1">
                           <span>🚗</span> Speed: {loc.speed.toFixed(1)} km/h
                         </p>
