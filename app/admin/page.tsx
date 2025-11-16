@@ -45,6 +45,7 @@ export default function AdminDashboard() {
     type: '',
   });
   const [dbStats, setDbStats] = useState<any>(null);
+  const [systemStatus, setSystemStatus] = useState<any>(null);
 
   // Fetch devices from API
   useEffect(() => {
@@ -114,6 +115,26 @@ export default function AdminDashboard() {
     fetchDbStats();
     // Refresh DB stats every 30 seconds
     const interval = setInterval(fetchDbStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch system status (uptime, memory)
+  useEffect(() => {
+    const fetchSystemStatus = async () => {
+      try {
+        const response = await fetch('/api/system/status');
+        if (response.ok) {
+          const data = await response.json();
+          setSystemStatus(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch system status:', err);
+      }
+    };
+
+    fetchSystemStatus();
+    // Refresh every 10 seconds for live uptime
+    const interval = setInterval(fetchSystemStatus, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -298,6 +319,36 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* System Status */}
+      {systemStatus && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              System Status
+            </h3>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 p-4 rounded">
+                <p className="text-sm text-gray-600">App Uptime</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStatus.uptime.formatted}</p>
+                <p className="text-xs text-gray-500 mt-1">Running since server start</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded">
+                <p className="text-sm text-gray-600">Memory Usage</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStatus.memory.heapUsed} MB</p>
+                <p className="text-xs text-gray-500 mt-1">Heap: {systemStatus.memory.heapTotal} MB / RSS: {systemStatus.memory.rss} MB</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded">
+                <p className="text-sm text-gray-600">Runtime</p>
+                <p className="text-2xl font-bold text-gray-900">{systemStatus.nodejs}</p>
+                <p className="text-xs text-gray-500 mt-1">Platform: {systemStatus.platform}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Database Statistics */}
       {dbStats && (
