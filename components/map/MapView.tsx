@@ -91,11 +91,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   }, [selectedDevice, timeFilter]);
 
   // No client-side filtering needed - API already filters by username and timeRangeHours
-  const filteredLocations = locations;
+  // Filter out locations without username (should not happen, but TypeScript safety)
+  const filteredLocations = locations.filter(loc => loc.username != null);
 
   // Group by device
   const deviceGroups = filteredLocations.reduce((acc, loc) => {
-    const deviceId = loc.username;
+    const deviceId = loc.username!; // Safe to use ! here because we filtered null above
     if (!acc[deviceId]) acc[deviceId] = [];
     acc[deviceId].push(loc);
     return acc;
@@ -187,12 +188,12 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
                       <p className="flex items-center gap-1">
                         <span>🕒</span> {loc.display_time}
                       </p>
-                      {loc.battery !== undefined && (
+                      {loc.battery !== undefined && loc.battery !== null && (
                         <p className="flex items-center gap-1">
                           <span>🔋</span> Battery: {loc.battery}%
                         </p>
                       )}
-                      {loc.speed !== undefined && (
+                      {loc.speed !== undefined && loc.speed !== null && (
                         <p className="flex items-center gap-1">
                           <span>🚗</span> Speed: {(loc.speed * 3.6).toFixed(1)} km/h
                         </p>
