@@ -17,6 +17,7 @@ import {
 interface MapViewProps {
   selectedDevice: string;
   timeFilter: number; // in hours, 0 = all
+  isPaused: boolean;
 }
 
 interface DeviceInfo {
@@ -38,12 +39,11 @@ function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zo
   return null;
 }
 
-export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
+export default function MapView({ selectedDevice, timeFilter, isPaused }: MapViewProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [devices, setDevices] = useState<Record<string, DeviceInfo>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -167,19 +167,7 @@ export default function MapView({ selectedDevice, timeFilter }: MapViewProps) {
   }
 
   return (
-    <div className="h-full w-full relative">
-      {/* Pause/Resume Toggle Button */}
-      <button
-        onClick={() => setIsPaused(!isPaused)}
-        className={`absolute top-4 left-4 z-[1000] px-4 py-2 rounded-lg shadow-lg font-semibold transition-all ${
-          isPaused
-            ? "bg-green-500 hover:bg-green-600 text-white"
-            : "bg-red-500 hover:bg-red-600 text-white"
-        }`}
-      >
-        {isPaused ? "▶ Resume" : "⏸ Pause"}
-      </button>
-
+    <div className="h-full w-full">
       <MapContainer
         center={[48.1351, 11.582]}
         zoom={12}
