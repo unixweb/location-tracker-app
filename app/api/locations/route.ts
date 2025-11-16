@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
       : 1000;
     const sync = searchParams.get('sync') !== 'false'; // Default: true
 
+    // Variable to store n8n data as fallback
+    let n8nData: LocationResponse | null = null;
+
     // Step 1: Optionally fetch and sync from n8n
     if (sync) {
       try {
@@ -65,6 +68,9 @@ export async function GET(request: NextRequest) {
             }));
           }
 
+          // Store n8n data for fallback
+          n8nData = data;
+
           // Store new locations in SQLite
           if (data.history && Array.isArray(data.history) && data.history.length > 0) {
             // Get latest timestamp from our DB
@@ -97,6 +103,23 @@ export async function GET(request: NextRequest) {
       limit,
     });
 
+    // Step 3: If DB is empty, use n8n data as fallback
+    if (locations.length === 0 && n8nData && n8nData.history) {
+      console.log('[API] DB empty, using n8n data as fallback');
+      // Filter n8n data if needed
+      let filteredHistory = n8nData.history;
+
+      if (username) {
+        filteredHistory = filteredHistory.filter(loc => loc.username === username);
+      }
+
+      return NextResponse.json({
+        ...n8nData,
+        history: filteredHistory,
+        total_points: filteredHistory.length,
+      });
+    }
+
     // Normalize locations: Ensure speed and battery are numbers or null (not undefined)
     locations = locations.map(loc => ({
       ...loc,
@@ -107,7 +130,7 @@ export async function GET(request: NextRequest) {
     // Get actual total count from database (not limited by 'limit' parameter)
     const stats = locationDb.getStats();
 
-    // Step 3: Return data in n8n-compatible format
+    // Step 4: Return data in n8n-compatible format
     const response: LocationResponse = {
       success: true,
       current: locations.length > 0 ? locations[0] : null,
