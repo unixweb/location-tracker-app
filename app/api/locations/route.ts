@@ -122,13 +122,28 @@ export async function GET(request: NextRequest) {
       // Filter n8n data if needed
       let filteredHistory = n8nData.history;
 
+      console.log('[API Debug] n8n data before filter:', filteredHistory.length, 'items');
+      console.log('[API Debug] timeRangeHours:', timeRangeHours);
+
       if (username) {
         filteredHistory = filteredHistory.filter(loc => loc.username === username);
+        console.log('[API Debug] After username filter:', filteredHistory.length, 'items');
       }
 
       if (timeRangeHours) {
         const cutoffTime = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000).toISOString();
-        filteredHistory = filteredHistory.filter(loc => loc.timestamp >= cutoffTime);
+        console.log('[API Debug] Cutoff time:', cutoffTime);
+        console.log('[API Debug] Sample timestamps:', filteredHistory.slice(0, 3).map(l => l.timestamp));
+
+        const beforeCount = filteredHistory.length;
+        filteredHistory = filteredHistory.filter(loc => {
+          const keep = loc.timestamp >= cutoffTime;
+          if (!keep && beforeCount < 5) {
+            console.log('[API Debug] Filtering out:', loc.timestamp, 'because older than', cutoffTime);
+          }
+          return keep;
+        });
+        console.log('[API Debug] After time filter:', filteredHistory.length, 'items (removed', beforeCount - filteredHistory.length, ')');
       }
 
       return NextResponse.json({
