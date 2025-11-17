@@ -56,73 +56,52 @@ export default function Home() {
             </select>
           </div>
 
-          {/* Time Filter with Tabs */}
-          <div className="flex flex-col gap-2">
-            {/* Tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFilterMode("quick")}
-                className={`px-3 py-1 text-sm font-medium rounded-t-md transition-colors ${
-                  filterMode === "quick"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                Quick Filters
-              </button>
-              <button
-                onClick={() => setFilterMode("custom")}
-                className={`px-3 py-1 text-sm font-medium rounded-t-md transition-colors ${
-                  filterMode === "custom"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                Custom Range
-              </button>
-            </div>
-
-            {/* Content based on selected tab */}
-            <div className="border border-gray-300 rounded-md p-3 bg-white">
-              {filterMode === "quick" ? (
-                <div>
-                  <label className="text-sm font-medium mr-2">Time:</label>
-                  <select
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(Number(e.target.value))}
-                    className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {TIME_FILTERS.map((filter) => (
-                      <option key={filter.value} value={filter.value}>
-                        {filter.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium w-16">From:</label>
-                    <input
-                      type="datetime-local"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium w-16">To:</label>
-                    <input
-                      type="datetime-local"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Time Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Time:</label>
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {TIME_FILTERS.map((filter) => (
+                <option key={filter.value} value={filter.value}>
+                  {filter.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setFilterMode(filterMode === "quick" ? "custom" : "quick")}
+              className="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              title="Toggle Custom Range"
+            >
+              📅 {filterMode === "quick" ? "Custom" : "Quick"}
+            </button>
           </div>
+
+          {/* Custom Range (only visible when active) */}
+          {filterMode === "custom" && (
+            <div className="flex items-center gap-2 border border-blue-300 bg-blue-50 rounded-md p-2">
+              <div className="flex items-center gap-1">
+                <label className="text-xs font-medium">From:</label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <label className="text-xs font-medium">To:</label>
+                <input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Pause/Resume Button */}
           <button
