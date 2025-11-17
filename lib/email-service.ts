@@ -13,6 +13,11 @@ import {
 } from './email-renderer';
 
 export class EmailService {
+  /**
+   * Cached SMTP transporter instance.
+   * Set to null initially and reused for subsequent emails to avoid reconnecting.
+   * Call resetTransporter() when SMTP configuration changes to invalidate cache.
+   */
   private transporter: Transporter | null = null;
 
   /**
@@ -168,6 +173,13 @@ export class EmailService {
       console.error('[EmailService] SMTP connection test failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Reset the cached transporter (call when SMTP config changes)
+   */
+  resetTransporter(): void {
+    this.transporter = null;
   }
 }
 
