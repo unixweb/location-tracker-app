@@ -26,8 +26,16 @@ interface DeviceInfo {
   color: string;
 }
 
-// Component to auto-center map to latest position
-function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zoom: number }) {
+// Component to auto-center map to latest position and track zoom
+function SetViewOnChange({
+  center,
+  zoom,
+  onZoomChange
+}: {
+  center: [number, number] | null;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -35,6 +43,22 @@ function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zo
       map.setView(center, zoom, { animate: true });
     }
   }, [center, zoom, map]);
+
+  useEffect(() => {
+    const handleZoom = () => {
+      onZoomChange(map.getZoom());
+    };
+
+    // Initial zoom
+    onZoomChange(map.getZoom());
+
+    // Listen to zoom changes
+    map.on('zoomend', handleZoom);
+
+    return () => {
+      map.off('zoomend', handleZoom);
+    };
+  }, [map, onZoomChange]);
 
   return null;
 }
@@ -45,6 +69,7 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const [currentZoom, setCurrentZoom] = useState(12);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Add animation styles for latest marker
@@ -206,8 +231,12 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
         zoom={12}
         style={{ height: "100%", width: "100%" }}
       >
-        {/* Auto-center to latest position */}
-        <SetViewOnChange center={mapCenter} zoom={14} />
+        {/* Auto-center to latest position and track zoom */}
+        <SetViewOnChange
+          center={mapCenter}
+          zoom={14}
+          onZoomChange={setCurrentZoom}
+        />
 
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Standard">
@@ -276,7 +305,8 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
                     position={[Number(loc.latitude), Number(loc.longitude)]}
                     icon={createCustomIcon(
                       device.color,
-                      isLatest
+                      isLatest,
+                      currentZoom
                     )}
                   >
                     <Popup>
@@ -312,8 +342,16 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
 }
 
 // Helper to create custom icon (similar to original)
-function createCustomIcon(color: string, isLatest: boolean) {
-  const size = isLatest ? 48 : 24; // Größer: 48px statt 32px
+function createCustomIcon(color: string, isLatest: boolean, zoom: number) {
+  // Base size - much bigger than before
+  const baseSize = isLatest ? 64 : 32;
+
+  // Zoom-based scaling: smaller at zoom 10, larger at zoom 18+
+  // zoom 10 = 0.6x, zoom 12 = 1.0x, zoom 15 = 1.45x, zoom 18 = 1.9x
+  const zoomScale = 0.6 + ((zoom - 10) * 0.15);
+  const clampedScale = Math.max(0.5, Math.min(2.5, zoomScale)); // Clamp between 0.5x and 2.5x
+
+  const size = Math.round(baseSize * clampedScale);
 
   // Standard Location Pin Icon (wie Google Maps/Standard Marker)
   const svg = `
