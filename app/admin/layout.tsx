@@ -16,6 +16,7 @@ export default function AdminLayout({
     { name: "Devices", href: "/admin/devices" },
     { name: "Users", href: "/admin/users" },
     { name: "Settings", href: "/admin/settings" },
+    { name: "Emails", href: "/admin/emails" },
   ];
 
   return (
