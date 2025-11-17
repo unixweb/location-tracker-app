@@ -313,19 +313,28 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
 
 // Helper to create custom icon (similar to original)
 function createCustomIcon(color: string, isLatest: boolean) {
-  const size = isLatest ? 32 : 16;
+  const size = isLatest ? 48 : 24; // Größer: 48px statt 32px
 
+  // Standard Location Pin Icon (wie Google Maps/Standard Marker)
   const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2"/>
-      <line x1="16" y1="16" x2="16" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <svg width="${size}" height="${size}" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer pin shape -->
+      <path d="M12 0C5.4 0 0 5.4 0 12c0 7 12 24 12 24s12-17 12-24c0-6.6-5.4-12-12-12z"
+            fill="${color}"
+            stroke="white"
+            stroke-width="1.5"/>
+      <!-- Inner white circle -->
+      <circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/>
+      <!-- Center dot -->
+      <circle cx="12" cy="12" r="2.5" fill="${color}"/>
     </svg>
   `;
 
   return L.divIcon({
     html: svg,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [size, size * 1.5], // Height 1.5x width for pin shape
+    iconAnchor: [size / 2, size * 1.5], // Bottom center point
+    popupAnchor: [0, -size * 1.2], // Popup above the pin
     className: isLatest ? "custom-marker-icon latest-marker" : "custom-marker-icon",
   });
 }
