@@ -14,7 +14,7 @@ import { locationDb, Location } from '@/lib/db';
  *   "timestamp": "2024-01-15T10:30:00Z",
  *   "user_id": 0,
  *   "username": "10",
- *   "marker_label": "Joachim Pixel",
+ *   "marker_label": "Device A",
  *   "battery": 85,
  *   "speed": 2.5,
  *   ...

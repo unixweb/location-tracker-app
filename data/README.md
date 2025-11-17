@@ -20,8 +20,8 @@ npm run db:init:locations  # Creates locations.sqlite (Location cache)
 - Password: `admin123`
 
 **Default devices:**
-- Device 10: "Joachim Pixel" (red #e74c3c)
-- Device 11: "Huawei Smartphone" (blue #3498db)
+- Device 10: "Device A" (red #e74c3c)
+- Device 11: "Device B" (blue #3498db)
 
 ## Database Files
 
