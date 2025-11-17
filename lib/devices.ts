@@ -1,8 +1,8 @@
 import { Device } from '@/types/location';
 
 export const DEVICES: Record<string, Device> = {
-  '10': { id: '10', name: 'Joachim Pixel', color: '#e74c3c' },
-  '11': { id: '11', name: 'Huawei Smartphone', color: '#3498db' },
+  '10': { id: '10', name: 'Device A', color: '#e74c3c' },
+  '11': { id: '11', name: 'Device B', color: '#3498db' },
 };
 
 export const DEFAULT_DEVICE: Device = {

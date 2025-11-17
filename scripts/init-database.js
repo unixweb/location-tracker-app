@@ -92,12 +92,12 @@ if (deviceCount.count === 0) {
   db.prepare(`
     INSERT INTO Device (id, name, color, ownerId, isActive, description)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run('10', 'Joachim Pixel', '#e74c3c', null, 1, 'Default OwnTracks device');
+  `).run('10', 'Device A', '#e74c3c', null, 1, 'Default OwnTracks device');
 
   db.prepare(`
     INSERT INTO Device (id, name, color, ownerId, isActive, description)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run('11', 'Huawei Smartphone', '#3498db', null, 1, 'Default OwnTracks device');
+  `).run('11', 'Device B', '#3498db', null, 1, 'Default OwnTracks device');
 
   console.log('✓ Created default devices (10, 11)');
 } else {
