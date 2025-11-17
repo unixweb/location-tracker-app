@@ -2,12 +2,10 @@
  * Encryption utilities for sensitive data
  * Uses AES-256-GCM for encryption
  */
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const AUTH_TAG_LENGTH = 16;
-const SALT_LENGTH = 64;
 
 /**
  * Get encryption key from environment
@@ -25,6 +23,10 @@ function getEncryptionKey(): Buffer {
  * Returns base64 encoded string with format: iv:authTag:encrypted
  */
 export function encrypt(text: string): string {
+  if (!text || text.trim().length === 0) {
+    throw new Error('Text to encrypt cannot be empty or null');
+  }
+
   try {
     const key = getEncryptionKey();
     const iv = crypto.randomBytes(IV_LENGTH);
