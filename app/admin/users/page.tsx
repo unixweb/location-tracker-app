@@ -128,6 +128,67 @@ export default function UsersPage() {
     }
   };
 
+  // Resend welcome email
+  const handleResendWelcome = async (user: User) => {
+    if (!user.email) {
+      alert('This user has no email address');
+      return;
+    }
+
+    if (!confirm(`Send welcome email to ${user.email}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/emails/send-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template: 'welcome',
+          email: user.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send email');
+      }
+
+      alert('Welcome email sent successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to send welcome email');
+    }
+  };
+
+  // Send password reset
+  const handleSendPasswordReset = async (user: User) => {
+    if (!user.email) {
+      alert('This user has no email address');
+      return;
+    }
+
+    if (!confirm(`Send password reset email to ${user.email}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send email');
+      }
+
+      alert('Password reset email sent successfully');
+    } catch (err: any) {
+      alert(err.message || 'Failed to send password reset email');
+    }
+  };
+
   // Open Edit Modal
   const openEditModal = (user: User) => {
     setSelectedUser(user);
@@ -233,6 +294,24 @@ export default function UsersPage() {
                 Delete
               </button>
             </div>
+
+            {/* Email Actions */}
+            {user.email && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => handleResendWelcome(user)}
+                  className="flex-1 px-3 py-2 bg-green-600 text-white text-xs rounded-md hover:bg-green-700"
+                >
+                  Resend Welcome
+                </button>
+                <button
+                  onClick={() => handleSendPasswordReset(user)}
+                  className="flex-1 px-3 py-2 bg-orange-600 text-white text-xs rounded-md hover:bg-orange-700"
+                >
+                  Reset Password
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

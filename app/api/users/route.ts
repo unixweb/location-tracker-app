@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { userDb } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { emailService } from '@/lib/email-service';
 
 // GET /api/users - List all users (admin only)
 export async function GET() {
@@ -85,6 +86,23 @@ export async function POST(request: Request) {
       passwordHash,
       role: role || 'VIEWER',
     });
+
+    // Send welcome email (don't fail if email fails)
+    if (email) {
+      try {
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        await emailService.sendWelcomeEmail({
+          email,
+          username,
+          loginUrl: `${baseUrl}/login`,
+          temporaryPassword: password, // Send the original password
+        });
+        console.log('[UserCreate] Welcome email sent to:', email);
+      } catch (emailError) {
+        console.error('[UserCreate] Failed to send welcome email:', emailError);
+        // Don't fail user creation if email fails
+      }
+    }
 
     // Remove password hash from response
     const { passwordHash: _, ...safeUser } = user;
