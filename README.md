@@ -254,20 +254,125 @@ Die n8n-Workflow holt die Daten, und die App synct automatisch alle 5 Sekunden.
 
 ### Datenfluss
 
+```mermaid
+flowchart TD
+    A[📱 OwnTracks App] -->|MQTT Publish| B[🔌 MQTT Broker]
+    B -->|Subscribe| C[⚙️ n8n MQTT Trigger]
+    C -->|Store| D[💾 NocoDB]
+    D -->|Webhook API| E[🌐 n8n Webhook<br/>/webhook/location]
+
+    F[🖥️ Browser Client] -->|GET /api/locations<br/>alle 5 Sek| G[📡 Next.js API Route]
+
+    G -->|1. Fetch Fresh Data| E
+    E -->|JSON Response| G
+
+    G -->|2. Sync New Locations| H[(🗄️ SQLite Cache<br/>locations.sqlite)]
+
+    H -->|3. Query Filtered Data| G
+    G -->|JSON Response| F
+
+    F -->|Render| I[🗺️ React Leaflet Map]
+
+    J[👤 Admin User] -->|Login| K[🔐 NextAuth.js]
+    K -->|Authenticated| L[📊 Admin Panel]
+    L -->|CRUD Operations| M[(💼 SQLite DB<br/>database.sqlite)]
+
+    style A fill:#4CAF50
+    style B fill:#FF9800
+    style C fill:#2196F3
+    style D fill:#9C27B0
+    style E fill:#F44336
+    style G fill:#00BCD4
+    style H fill:#FFC107
+    style I fill:#8BC34A
+    style K fill:#E91E63
+    style M fill:#FFC107
 ```
-OwnTracks App (MQTT)
-    ↓
-n8n MQTT Trigger
-    ↓
-NocoDB Speicherung
-    ↓
-n8n Webhook API (/webhook/location)
-    ↓
-Next.js API Route (/api/locations)
-    ↓ (Auto-Sync alle 5 Sek.)
-SQLite Cache (locations.sqlite)
-    ↓
-Frontend (React Components)
+
+### Komponenten-Übersicht
+
+```mermaid
+graph LR
+    subgraph "External Services"
+        A[OwnTracks App]
+        B[MQTT Broker]
+        C[n8n Automation]
+        D[NocoDB]
+    end
+
+    subgraph "Next.js Application"
+        E[Frontend<br/>React/Leaflet]
+        F[API Routes]
+        G[Auth Layer<br/>NextAuth.js]
+    end
+
+    subgraph "Data Layer"
+        H[locations.sqlite<br/>Tracking Data]
+        I[database.sqlite<br/>Users & Devices]
+    end
+
+    A -->|MQTT| B
+    B -->|Subscribe| C
+    C -->|Store| D
+    C -->|Webhook| F
+
+    E -->|HTTP| F
+    F -->|Read/Write| H
+    F -->|Read/Write| I
+
+    E -->|Auth| G
+    G -->|Validate| I
+
+    style A fill:#4CAF50,color:#fff
+    style B fill:#FF9800,color:#fff
+    style C fill:#2196F3,color:#fff
+    style D fill:#9C27B0,color:#fff
+    style E fill:#00BCD4,color:#000
+    style F fill:#00BCD4,color:#000
+    style G fill:#E91E63,color:#fff
+    style H fill:#FFC107,color:#000
+    style I fill:#FFC107,color:#000
+```
+
+### Datenbank-Architektur
+
+```mermaid
+erDiagram
+    USER ||--o{ DEVICE : owns
+    DEVICE ||--o{ LOCATION : tracks
+
+    USER {
+        string id PK
+        string username UK
+        string email
+        string passwordHash
+        string role
+        datetime createdAt
+        datetime lastLoginAt
+    }
+
+    DEVICE {
+        string id PK
+        string name
+        string color
+        string ownerId FK
+        boolean isActive
+        string description
+        datetime createdAt
+    }
+
+    LOCATION {
+        int id PK
+        float latitude
+        float longitude
+        datetime timestamp
+        string username FK
+        int user_id
+        string display_time
+        int battery
+        float speed
+        int chat_id
+    }
 ```
 
 ### Auto-Sync Mechanismus
