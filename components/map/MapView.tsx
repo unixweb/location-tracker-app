@@ -18,6 +18,9 @@ interface MapViewProps {
   selectedDevice: string;
   timeFilter: number; // in hours, 0 = all
   isPaused: boolean;
+  filterMode: "quick" | "custom";
+  startTime: string; // datetime-local format
+  endTime: string;   // datetime-local format
 }
 
 interface DeviceInfo {
@@ -63,7 +66,7 @@ function SetViewOnChange({
   return null;
 }
 
-export default function MapView({ selectedDevice, timeFilter, isPaused }: MapViewProps) {
+export default function MapView({ selectedDevice, timeFilter, isPaused, filterMode, startTime, endTime }: MapViewProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [devices, setDevices] = useState<Record<string, DeviceInfo>>({});
   const [loading, setLoading] = useState(true);
@@ -141,9 +144,18 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
         if (selectedDevice !== "all") {
           params.set("username", selectedDevice);
         }
-        if (timeFilter > 0) {
+
+        // Apply time filter based on mode
+        if (filterMode === "custom" && startTime && endTime) {
+          // Convert datetime-local to ISO string
+          const startISO = new Date(startTime).toISOString();
+          const endISO = new Date(endTime).toISOString();
+          params.set("startTime", startISO);
+          params.set("endTime", endISO);
+        } else if (filterMode === "quick" && timeFilter > 0) {
           params.set("timeRangeHours", timeFilter.toString());
         }
+
         params.set("limit", "5000"); // Fetch more data for better history
 
         // Fetch from local SQLite API (with auto-sync from n8n)
@@ -194,7 +206,7 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
         intervalRef.current = null;
       }
     };
-  }, [selectedDevice, timeFilter, isPaused]);
+  }, [selectedDevice, timeFilter, isPaused, filterMode, startTime, endTime]);
 
   // No client-side filtering needed - API already filters by username and timeRangeHours
   // Filter out locations without username (should not happen, but TypeScript safety)

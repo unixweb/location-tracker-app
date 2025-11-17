@@ -27,6 +27,11 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState<number>(1); // Default 1 hour
   const [isPaused, setIsPaused] = useState(false);
 
+  // Custom range state
+  const [filterMode, setFilterMode] = useState<"quick" | "custom">("quick");
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header with controls */}
@@ -51,20 +56,72 @@ export default function Home() {
             </select>
           </div>
 
-          {/* Time Filter */}
-          <div>
-            <label className="text-sm font-medium mr-2">Time:</label>
-            <select
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(Number(e.target.value))}
-              className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {TIME_FILTERS.map((filter) => (
-                <option key={filter.value} value={filter.value}>
-                  {filter.label}
-                </option>
-              ))}
-            </select>
+          {/* Time Filter with Tabs */}
+          <div className="flex flex-col gap-2">
+            {/* Tabs */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFilterMode("quick")}
+                className={`px-3 py-1 text-sm font-medium rounded-t-md transition-colors ${
+                  filterMode === "quick"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Quick Filters
+              </button>
+              <button
+                onClick={() => setFilterMode("custom")}
+                className={`px-3 py-1 text-sm font-medium rounded-t-md transition-colors ${
+                  filterMode === "custom"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Custom Range
+              </button>
+            </div>
+
+            {/* Content based on selected tab */}
+            <div className="border border-gray-300 rounded-md p-3 bg-white">
+              {filterMode === "quick" ? (
+                <div>
+                  <label className="text-sm font-medium mr-2">Time:</label>
+                  <select
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(Number(e.target.value))}
+                    className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {TIME_FILTERS.map((filter) => (
+                      <option key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium w-16">From:</label>
+                    <input
+                      type="datetime-local"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium w-16">To:</label>
+                    <input
+                      type="datetime-local"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Pause/Resume Button */}
@@ -91,7 +148,14 @@ export default function Home() {
 
       {/* Map */}
       <div className="flex-1">
-        <MapView selectedDevice={selectedDevice} timeFilter={timeFilter} isPaused={isPaused} />
+        <MapView
+          selectedDevice={selectedDevice}
+          timeFilter={timeFilter}
+          isPaused={isPaused}
+          filterMode={filterMode}
+          startTime={startTime}
+          endTime={endTime}
+        />
       </div>
     </div>
   );

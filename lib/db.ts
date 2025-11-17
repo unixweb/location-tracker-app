@@ -238,6 +238,8 @@ export interface LocationFilters {
   username?: string;
   user_id?: number;
   timeRangeHours?: number;
+  startTime?: string; // ISO string for custom range start
+  endTime?: string;   // ISO string for custom range end
   limit?: number;
   offset?: number;
 }
@@ -355,8 +357,13 @@ export const locationDb = {
       params.push(filters.username);
     }
 
-    // Filter by time range - calculate cutoff in JavaScript for accuracy
-    if (filters.timeRangeHours) {
+    // Filter by time range - either custom range or quick filter
+    if (filters.startTime && filters.endTime) {
+      // Custom range: between startTime and endTime
+      conditions.push('timestamp BETWEEN ? AND ?');
+      params.push(filters.startTime, filters.endTime);
+    } else if (filters.timeRangeHours) {
+      // Quick filter: calculate cutoff in JavaScript for accuracy
       const cutoffTime = new Date(Date.now() - filters.timeRangeHours * 60 * 60 * 1000).toISOString();
       conditions.push('timestamp >= ?');
       params.push(cutoffTime);
@@ -398,7 +405,13 @@ export const locationDb = {
       params.push(filters.username);
     }
 
-    if (filters.timeRangeHours) {
+    // Filter by time range - either custom range or quick filter
+    if (filters.startTime && filters.endTime) {
+      // Custom range: between startTime and endTime
+      conditions.push('timestamp BETWEEN ? AND ?');
+      params.push(filters.startTime, filters.endTime);
+    } else if (filters.timeRangeHours) {
+      // Quick filter: calculate cutoff in JavaScript for accuracy
       const cutoffTime = new Date(Date.now() - filters.timeRangeHours * 60 * 60 * 1000).toISOString();
       conditions.push('timestamp >= ?');
       params.push(cutoffTime);
