@@ -14,12 +14,14 @@
     "db:cleanup": "node scripts/cleanup-old-locations.js",
     "db:cleanup:7d": "node scripts/cleanup-old-locations.js 168",
     "db:cleanup:30d": "node scripts/cleanup-old-locations.js 720",
-    "test:location": "node scripts/add-test-location.js"
+    "test:location": "node scripts/add-test-location.js",
+    "email:dev": "email dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@react-email/components": "^0.5.7",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
@@ -33,13 +35,16 @@
     "leaflet": "^1.9.4",
     "next": "^16.0.3",
     "next-auth": "^5.0.0-beta.30",
+    "nodemailer": "^7.0.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-email": "^4.3.2",
     "react-leaflet": "^5.0.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@types/nodemailer": "^7.0.3",
     "autoprefixer": "^10.4.22",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17"
