@@ -355,10 +355,11 @@ export const locationDb = {
       params.push(filters.username);
     }
 
-    // Filter by time range
+    // Filter by time range - calculate cutoff in JavaScript for accuracy
     if (filters.timeRangeHours) {
-      conditions.push("timestamp >= datetime('now', '-' || ? || ' hours')");
-      params.push(filters.timeRangeHours);
+      const cutoffTime = new Date(Date.now() - filters.timeRangeHours * 60 * 60 * 1000).toISOString();
+      conditions.push('timestamp >= ?');
+      params.push(cutoffTime);
     }
 
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -398,8 +399,9 @@ export const locationDb = {
     }
 
     if (filters.timeRangeHours) {
-      conditions.push("timestamp >= datetime('now', '-' || ? || ' hours')");
-      params.push(filters.timeRangeHours);
+      const cutoffTime = new Date(Date.now() - filters.timeRangeHours * 60 * 60 * 1000).toISOString();
+      conditions.push('timestamp >= ?');
+      params.push(cutoffTime);
     }
 
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
