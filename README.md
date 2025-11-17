@@ -721,21 +721,6 @@ npm run lint             # ESLint ausführen
 
 ---
 
-## 🔄 Migration von Prisma zu SQLite
-
-Diese App wurde von Prisma ORM auf direktes better-sqlite3 migriert:
-
-**Vorteile:**
-- Keine ORM-Komplexität
-- Schnellere Queries
-- Bessere Kontrolle über SQL
-- Dual-Database Architektur möglich
-- WAL Mode für bessere Concurrency
-
-**Schema bleibt kompatibel** - Daten können aus alter `dev.db` übernommen werden.
-
----
-
 ## 📄 Lizenz
 
 MIT License - Open Source
