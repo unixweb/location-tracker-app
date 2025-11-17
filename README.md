@@ -727,6 +727,35 @@ MIT License - Open Source
 
 ---
 
+## 📜 Open Source Lizenzen
+
+Diese Anwendung verwendet folgende Open-Source-Software:
+
+### MIT License
+- [Next.js](https://github.com/vercel/next.js) - Copyright (c) Vercel, Inc.
+- [React](https://github.com/facebook/react) - Copyright (c) Meta Platforms, Inc.
+- [React-DOM](https://github.com/facebook/react) - Copyright (c) Meta Platforms, Inc.
+- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) - Copyright (c) Tailwind Labs, Inc.
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) - Copyright (c) Joshua Wise
+- [bcryptjs](https://github.com/dcodeIO/bcrypt.js) - Copyright (c) Daniel Wirtz
+
+### Apache License 2.0
+- [TypeScript](https://github.com/microsoft/TypeScript) - Copyright (c) Microsoft Corporation
+
+### ISC License
+- [NextAuth.js](https://github.com/nextauthjs/next-auth) - Copyright (c) NextAuth.js Contributors
+
+### BSD-2-Clause License
+- [Leaflet](https://github.com/Leaflet/Leaflet) - Copyright (c) Vladimir Agafonkin
+
+### Hippocratic License 2.1
+- [React-Leaflet](https://github.com/PaulLeCam/react-leaflet) - Copyright (c) Paul Le Cam
+
+**Vollständige Lizenztexte:**
+Alle vollständigen Lizenztexte der verwendeten Bibliotheken finden Sie in den jeweiligen GitHub-Repositories oder in der `node_modules` Directory nach Installation.
+
+---
+
 ## 🙏 Credits
 
 - **Next.js 14** - React Framework
