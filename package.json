@@ -13,7 +13,8 @@
     "db:init:locations": "node scripts/init-locations-db.js",
     "db:cleanup": "node scripts/cleanup-old-locations.js",
     "db:cleanup:7d": "node scripts/cleanup-old-locations.js 168",
-    "db:cleanup:30d": "node scripts/cleanup-old-locations.js 720"
+    "db:cleanup:30d": "node scripts/cleanup-old-locations.js 720",
+    "test:location": "node scripts/add-test-location.js"
   },
   "keywords": [],
   "author": "",

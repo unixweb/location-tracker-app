@@ -59,12 +59,26 @@ export async function GET(request: NextRequest) {
 
           // Normalize data: Ensure speed and battery fields exist (treat 0 explicitly)
           if (data.history && Array.isArray(data.history)) {
-            data.history = data.history.map(loc => ({
-              ...loc,
-              // Explicit handling: 0 is valid, only undefined/null → null
-              speed: typeof loc.speed === 'number' ? loc.speed : (loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null),
-              battery: typeof loc.battery === 'number' ? loc.battery : (loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null),
-            }));
+            data.history = data.history.map(loc => {
+              // Generate display_time in German locale (Europe/Berlin timezone)
+              const displayTime = new Date(loc.timestamp).toLocaleString('de-DE', {
+                timeZone: 'Europe/Berlin',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+
+              return {
+                ...loc,
+                display_time: displayTime,
+                // Explicit handling: 0 is valid, only undefined/null → null
+                speed: typeof loc.speed === 'number' ? loc.speed : (loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null),
+                battery: typeof loc.battery === 'number' ? loc.battery : (loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null),
+              };
+            });
           }
 
           // Store n8n data for fallback
@@ -124,12 +138,26 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Normalize locations: Ensure speed and battery are numbers or null (not undefined)
-    locations = locations.map(loc => ({
-      ...loc,
-      speed: loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null,
-      battery: loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null,
-    }));
+    // Normalize locations: Ensure speed, battery, and display_time are correct
+    locations = locations.map(loc => {
+      // Generate display_time if missing or regenerate from timestamp
+      const displayTime = loc.display_time || new Date(loc.timestamp).toLocaleString('de-DE', {
+        timeZone: 'Europe/Berlin',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      return {
+        ...loc,
+        display_time: displayTime,
+        speed: loc.speed !== undefined && loc.speed !== null ? Number(loc.speed) : null,
+        battery: loc.battery !== undefined && loc.battery !== null ? Number(loc.battery) : null,
+      };
+    });
 
     // Get actual total count from database (not limited by 'limit' parameter)
     const stats = locationDb.getStats();

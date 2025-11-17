@@ -26,8 +26,16 @@ interface DeviceInfo {
   color: string;
 }
 
-// Component to auto-center map to latest position
-function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zoom: number }) {
+// Component to auto-center map to latest position and track zoom
+function SetViewOnChange({
+  center,
+  zoom,
+  onZoomChange
+}: {
+  center: [number, number] | null;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -35,6 +43,22 @@ function SetViewOnChange({ center, zoom }: { center: [number, number] | null; zo
       map.setView(center, zoom, { animate: true });
     }
   }, [center, zoom, map]);
+
+  useEffect(() => {
+    const handleZoom = () => {
+      onZoomChange(map.getZoom());
+    };
+
+    // Initial zoom
+    onZoomChange(map.getZoom());
+
+    // Listen to zoom changes
+    map.on('zoomend', handleZoom);
+
+    return () => {
+      map.off('zoomend', handleZoom);
+    };
+  }, [map, onZoomChange]);
 
   return null;
 }
@@ -45,7 +69,41 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+  const [currentZoom, setCurrentZoom] = useState(12);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Add animation styles for latest marker
+  useEffect(() => {
+    // Inject CSS animation for marker pulse effect
+    if (typeof document !== 'undefined') {
+      const styleId = 'marker-animation-styles';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          @keyframes marker-pulse {
+            0% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.15);
+              opacity: 0.8;
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          .latest-marker {
+            animation: marker-pulse 2s ease-in-out infinite;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
 
   // Fetch devices from API
   useEffect(() => {
@@ -173,8 +231,12 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
         zoom={12}
         style={{ height: "100%", width: "100%" }}
       >
-        {/* Auto-center to latest position */}
-        <SetViewOnChange center={mapCenter} zoom={14} />
+        {/* Auto-center to latest position and track zoom */}
+        <SetViewOnChange
+          center={mapCenter}
+          zoom={14}
+          onZoomChange={setCurrentZoom}
+        />
 
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Standard">
@@ -243,7 +305,8 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
                     position={[Number(loc.latitude), Number(loc.longitude)]}
                     icon={createCustomIcon(
                       device.color,
-                      isLatest
+                      isLatest,
+                      currentZoom
                     )}
                   >
                     <Popup>
@@ -279,20 +342,37 @@ export default function MapView({ selectedDevice, timeFilter, isPaused }: MapVie
 }
 
 // Helper to create custom icon (similar to original)
-function createCustomIcon(color: string, isLatest: boolean) {
-  const size = isLatest ? 32 : 16;
+function createCustomIcon(color: string, isLatest: boolean, zoom: number) {
+  // Base size - much bigger than before
+  const baseSize = isLatest ? 64 : 32;
 
+  // Zoom-based scaling: smaller at zoom 10, larger at zoom 18+
+  // zoom 10 = 0.6x, zoom 12 = 1.0x, zoom 15 = 1.45x, zoom 18 = 1.9x
+  const zoomScale = 0.6 + ((zoom - 10) * 0.15);
+  const clampedScale = Math.max(0.5, Math.min(2.5, zoomScale)); // Clamp between 0.5x and 2.5x
+
+  const size = Math.round(baseSize * clampedScale);
+
+  // Standard Location Pin Icon (wie Google Maps/Standard Marker)
   const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2"/>
-      <line x1="16" y1="16" x2="16" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <svg width="${size}" height="${size}" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer pin shape -->
+      <path d="M12 0C5.4 0 0 5.4 0 12c0 7 12 24 12 24s12-17 12-24c0-6.6-5.4-12-12-12z"
+            fill="${color}"
+            stroke="white"
+            stroke-width="1.5"/>
+      <!-- Inner white circle -->
+      <circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/>
+      <!-- Center dot -->
+      <circle cx="12" cy="12" r="2.5" fill="${color}"/>
     </svg>
   `;
 
   return L.divIcon({
     html: svg,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    className: "custom-marker-icon",
+    iconSize: [size, size * 1.5], // Height 1.5x width for pin shape
+    iconAnchor: [size / 2, size * 1.5], // Bottom center point
+    popupAnchor: [0, -size * 1.2], // Popup above the pin
+    className: isLatest ? "custom-marker-icon latest-marker" : "custom-marker-icon",
   });
 }

@@ -17,7 +17,7 @@ export async function GET() {
 
     return NextResponse.json({
       uptime: {
-        seconds: Math.floor(uptimeSeconds),
+        total: Math.floor(uptimeSeconds),
         formatted: `${days}d ${hours}h ${minutes}m ${seconds}s`,
         days,
         hours,

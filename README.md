@@ -254,20 +254,125 @@ Die n8n-Workflow holt die Daten, und die App synct automatisch alle 5 Sekunden.
 
 ### Datenfluss
 
+```mermaid
+flowchart TD
+    A[📱 OwnTracks App] -->|MQTT Publish| B[🔌 MQTT Broker]
+    B -->|Subscribe| C[⚙️ n8n MQTT Trigger]
+    C -->|Store| D[💾 NocoDB]
+    D -->|Webhook API| E[🌐 n8n Webhook<br/>/webhook/location]
+
+    F[🖥️ Browser Client] -->|GET /api/locations<br/>alle 5 Sek| G[📡 Next.js API Route]
+
+    G -->|1. Fetch Fresh Data| E
+    E -->|JSON Response| G
+
+    G -->|2. Sync New Locations| H[(🗄️ SQLite Cache<br/>locations.sqlite)]
+
+    H -->|3. Query Filtered Data| G
+    G -->|JSON Response| F
+
+    F -->|Render| I[🗺️ React Leaflet Map]
+
+    J[👤 Admin User] -->|Login| K[🔐 NextAuth.js]
+    K -->|Authenticated| L[📊 Admin Panel]
+    L -->|CRUD Operations| M[(💼 SQLite DB<br/>database.sqlite)]
+
+    style A fill:#4CAF50
+    style B fill:#FF9800
+    style C fill:#2196F3
+    style D fill:#9C27B0
+    style E fill:#F44336
+    style G fill:#00BCD4
+    style H fill:#FFC107
+    style I fill:#8BC34A
+    style K fill:#E91E63
+    style M fill:#FFC107
 ```
-OwnTracks App (MQTT)
-    ↓
-n8n MQTT Trigger
-    ↓
-NocoDB Speicherung
-    ↓
-n8n Webhook API (/webhook/location)
-    ↓
-Next.js API Route (/api/locations)
-    ↓ (Auto-Sync alle 5 Sek.)
-SQLite Cache (locations.sqlite)
-    ↓
-Frontend (React Components)
+
+### Komponenten-Übersicht
+
+```mermaid
+graph LR
+    subgraph "External Services"
+        A[OwnTracks App]
+        B[MQTT Broker]
+        C[n8n Automation]
+        D[NocoDB]
+    end
+
+    subgraph "Next.js Application"
+        E[Frontend<br/>React/Leaflet]
+        F[API Routes]
+        G[Auth Layer<br/>NextAuth.js]
+    end
+
+    subgraph "Data Layer"
+        H[locations.sqlite<br/>Tracking Data]
+        I[database.sqlite<br/>Users & Devices]
+    end
+
+    A -->|MQTT| B
+    B -->|Subscribe| C
+    C -->|Store| D
+    C -->|Webhook| F
+
+    E -->|HTTP| F
+    F -->|Read/Write| H
+    F -->|Read/Write| I
+
+    E -->|Auth| G
+    G -->|Validate| I
+
+    style A fill:#4CAF50,color:#fff
+    style B fill:#FF9800,color:#fff
+    style C fill:#2196F3,color:#fff
+    style D fill:#9C27B0,color:#fff
+    style E fill:#00BCD4,color:#000
+    style F fill:#00BCD4,color:#000
+    style G fill:#E91E63,color:#fff
+    style H fill:#FFC107,color:#000
+    style I fill:#FFC107,color:#000
+```
+
+### Datenbank-Architektur
+
+```mermaid
+erDiagram
+    USER ||--o{ DEVICE : owns
+    DEVICE ||--o{ LOCATION : tracks
+
+    USER {
+        string id PK
+        string username UK
+        string email
+        string passwordHash
+        string role
+        datetime createdAt
+        datetime lastLoginAt
+    }
+
+    DEVICE {
+        string id PK
+        string name
+        string color
+        string ownerId FK
+        boolean isActive
+        string description
+        datetime createdAt
+    }
+
+    LOCATION {
+        int id PK
+        float latitude
+        float longitude
+        datetime timestamp
+        string username FK
+        int user_id
+        string display_time
+        int battery
+        float speed
+        int chat_id
+    }
 ```
 
 ### Auto-Sync Mechanismus
@@ -616,24 +721,38 @@ npm run lint             # ESLint ausführen
 
 ---
 
-## 🔄 Migration von Prisma zu SQLite
-
-Diese App wurde von Prisma ORM auf direktes better-sqlite3 migriert:
-
-**Vorteile:**
-- Keine ORM-Komplexität
-- Schnellere Queries
-- Bessere Kontrolle über SQL
-- Dual-Database Architektur möglich
-- WAL Mode für bessere Concurrency
-
-**Schema bleibt kompatibel** - Daten können aus alter `dev.db` übernommen werden.
-
----
-
 ## 📄 Lizenz
 
 MIT License - Open Source
+
+---
+
+## 📜 Open Source Lizenzen
+
+Diese Anwendung verwendet folgende Open-Source-Software:
+
+### MIT License
+- [Next.js](https://github.com/vercel/next.js) - Copyright (c) Vercel, Inc.
+- [React](https://github.com/facebook/react) - Copyright (c) Meta Platforms, Inc.
+- [React-DOM](https://github.com/facebook/react) - Copyright (c) Meta Platforms, Inc.
+- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) - Copyright (c) Tailwind Labs, Inc.
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) - Copyright (c) Joshua Wise
+- [bcryptjs](https://github.com/dcodeIO/bcrypt.js) - Copyright (c) Daniel Wirtz
+
+### Apache License 2.0
+- [TypeScript](https://github.com/microsoft/TypeScript) - Copyright (c) Microsoft Corporation
+
+### ISC License
+- [NextAuth.js](https://github.com/nextauthjs/next-auth) - Copyright (c) NextAuth.js Contributors
+
+### BSD-2-Clause License
+- [Leaflet](https://github.com/Leaflet/Leaflet) - Copyright (c) Vladimir Agafonkin
+
+### Hippocratic License 2.1
+- [React-Leaflet](https://github.com/PaulLeCam/react-leaflet) - Copyright (c) Paul Le Cam
+
+**Vollständige Lizenztexte:**
+Alle vollständigen Lizenztexte der verwendeten Bibliotheken finden Sie in den jeweiligen GitHub-Repositories oder in der `node_modules` Directory nach Installation.
 
 ---
 
