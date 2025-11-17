@@ -27,6 +27,11 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState<number>(1); // Default 1 hour
   const [isPaused, setIsPaused] = useState(false);
 
+  // Custom range state
+  const [filterMode, setFilterMode] = useState<"quick" | "custom">("quick");
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header with controls */}
@@ -52,8 +57,8 @@ export default function Home() {
           </div>
 
           {/* Time Filter */}
-          <div>
-            <label className="text-sm font-medium mr-2">Time:</label>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Time:</label>
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(Number(e.target.value))}
@@ -65,7 +70,38 @@ export default function Home() {
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => setFilterMode(filterMode === "quick" ? "custom" : "quick")}
+              className="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+              title="Toggle Custom Range"
+            >
+              📅 {filterMode === "quick" ? "Custom" : "Quick"}
+            </button>
           </div>
+
+          {/* Custom Range (only visible when active) */}
+          {filterMode === "custom" && (
+            <div className="flex items-center gap-2 border border-blue-300 bg-blue-50 rounded-md p-2">
+              <div className="flex items-center gap-1">
+                <label className="text-xs font-medium">From:</label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <label className="text-xs font-medium">To:</label>
+                <input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Pause/Resume Button */}
           <button
@@ -91,7 +127,14 @@ export default function Home() {
 
       {/* Map */}
       <div className="flex-1">
-        <MapView selectedDevice={selectedDevice} timeFilter={timeFilter} isPaused={isPaused} />
+        <MapView
+          selectedDevice={selectedDevice}
+          timeFilter={timeFilter}
+          isPaused={isPaused}
+          filterMode={filterMode}
+          startTime={startTime}
+          endTime={endTime}
+        />
       </div>
     </div>
   );

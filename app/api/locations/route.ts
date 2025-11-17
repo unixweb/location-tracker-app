@@ -15,6 +15,8 @@ const N8N_API_URL = "https://n8n.unixweb.home64.de/webhook/location";
  * Query parameters:
  * - username: Filter by device tracker ID
  * - timeRangeHours: Filter by time range (e.g., 1, 3, 6, 12, 24)
+ * - startTime: Custom range start (ISO string)
+ * - endTime: Custom range end (ISO string)
  * - limit: Maximum number of records (default: 1000)
  * - sync: Set to 'false' to skip n8n fetch and read only from cache
  */
@@ -25,6 +27,8 @@ export async function GET(request: NextRequest) {
     const timeRangeHours = searchParams.get('timeRangeHours')
       ? parseInt(searchParams.get('timeRangeHours')!, 10)
       : undefined;
+    const startTime = searchParams.get('startTime') || undefined;
+    const endTime = searchParams.get('endTime') || undefined;
     const limit = searchParams.get('limit')
       ? parseInt(searchParams.get('limit')!, 10)
       : 1000;
@@ -113,6 +117,8 @@ export async function GET(request: NextRequest) {
       user_id: 0, // Always filter for MQTT devices
       username,
       timeRangeHours,
+      startTime,
+      endTime,
       limit,
     });
 
@@ -126,7 +132,14 @@ export async function GET(request: NextRequest) {
         filteredHistory = filteredHistory.filter(loc => loc.username === username);
       }
 
-      if (timeRangeHours) {
+      // Apply time filters
+      if (startTime && endTime) {
+        // Custom range
+        filteredHistory = filteredHistory.filter(loc =>
+          loc.timestamp >= startTime && loc.timestamp <= endTime
+        );
+      } else if (timeRangeHours) {
+        // Quick filter
         const cutoffTime = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000).toISOString();
         filteredHistory = filteredHistory.filter(loc => loc.timestamp >= cutoffTime);
       }
