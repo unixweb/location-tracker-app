@@ -69,6 +69,36 @@ db.exec(`
 `);
 console.log('✓ Created indexes');
 
+// Create Settings table for app configuration
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+console.log('✓ Created settings table');
+
+// Create password reset tokens table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+  );
+`);
+console.log('✓ Created password_reset_tokens table');
+
+// Create index for performance
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_reset_tokens_user_id
+  ON password_reset_tokens(user_id);
+`);
+console.log('✓ Created password reset tokens index');
+
 // Check if admin user exists
 const existingAdmin = db.prepare('SELECT * FROM User WHERE username = ?').get('admin');
 
