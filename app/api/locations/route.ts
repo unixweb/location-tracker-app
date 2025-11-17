@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { LocationResponse } from "@/types/location";
 import { locationDb, Location } from "@/lib/db";
 
-const N8N_API_URL = "https://n8n.unixweb.home64.de/webhook/location";
+const N8N_API_URL = "https://n8n.example.com/webhook/location";
 
 /**
  * GET /api/locations

@@ -231,7 +231,7 @@ const { locationDb } = require('../lib/db');
 
 async function importFromNocoDB() {
   // Alle Daten von NocoDB API abrufen
-  const response = await fetch('https://n8n.unixweb.home64.de/webhook/location');
+  const response = await fetch('https://n8n.example.com/webhook/location');
   const data = await response.json();
 
   // Bulk-Insert in locations.sqlite

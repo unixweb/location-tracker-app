@@ -614,7 +614,7 @@ AUTH_SECRET=<generiere-mit-openssl-rand-base64-32>
 NEXTAUTH_URL=https://your-domain.com
 
 # Optional: n8n API URL (Standard in Code definiert)
-N8N_API_URL=https://n8n.unixweb.home64.de/webhook/location
+N8N_API_URL=https://n8n.example.com/webhook/location
 ```
 
 **Secret generieren:**
@@ -781,7 +781,7 @@ node scripts/init-locations-db.js
 
 ### Map zeigt keine Daten
 
-1. n8n Webhook erreichbar? `curl https://n8n.unixweb.home64.de/webhook/location`
+1. n8n Webhook erreichbar? `curl https://n8n.example.com/webhook/location`
 2. Locations in Datenbank? `/admin` → Database Statistics prüfen
 3. Auto-Sync aktiv? Browser Console öffnen
 
