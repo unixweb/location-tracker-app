@@ -24,13 +24,18 @@ Eine moderne Location-Tracking Anwendung basierend auf Next.js 14 mit MQTT/OwnTr
 ### Öffentliche Features
 - 🗺️ **Interaktive Karte** - Echtzeit-Standortverfolgung mit Leaflet.js
 - 🎨 **Mehrere Kartenansichten** - Standard, Satellit, Dark Mode
-- 🔍 **Device-Filterung** - Filtern nach Gerät und Zeitraum (1h, 3h, 6h, 12h, 24h)
+- 🔍 **Device-Filterung** - Filtern nach Gerät und Zeitraum
+- ⏱️ **Flexible Zeitfilter**:
+  - **Quick Filters:** 1h, 3h, 6h, 12h, 24h, All
+  - **Custom Range:** Benutzerdefinierter Zeitraum mit DateTime-Picker (z.B. 16.11.2025 16:00 - 17.11.2025 06:00)
+  - Kompakte UI - Custom Range nur sichtbar wenn aktiviert
 - 🔄 **Auto-Refresh** - Automatische Aktualisierung alle 5 Sekunden mit Pause/Resume Button
 - 🎯 **Auto-Center** - Karte zentriert automatisch auf neueste Position
 - ⏸️ **Pause/Resume** - Toggle-Button zum Stoppen/Starten des Auto-Refresh
 - 📱 **Responsive Design** - Optimiert für Desktop und Mobile
 - 📊 **Polylines** - Bewegungspfade mit farbcodierter Darstellung
 - 🎨 **Marker-Sortierung** - Neueste Position immer im Vordergrund (z-index optimiert)
+- 📍 **Zoom-basierte Icon-Skalierung** - Marker passen sich automatisch an Zoom-Level an
 
 ### Admin-Panel (Login erforderlich)
 - 🔐 **Authentifizierung** - NextAuth.js v5 mit bcrypt-Hashing
@@ -248,6 +253,36 @@ In der OwnTracks App:
 
 Die n8n-Workflow holt die Daten, und die App synct automatisch alle 5 Sekunden.
 
+### Zeitfilter verwenden
+
+Die App bietet zwei Modi für die Zeitfilterung:
+
+#### **Quick Filters** (Schnellauswahl)
+Vordefinierte Zeiträume für schnellen Zugriff:
+- **1 Hour** - Locations der letzten Stunde
+- **3 Hours** - Locations der letzten 3 Stunden
+- **6 Hours** - Locations der letzten 6 Stunden
+- **12 Hours** - Locations der letzten 12 Stunden
+- **24 Hours** - Locations der letzten 24 Stunden
+- **All** - Alle verfügbaren Locations
+
+**Verwendung:**
+1. Im Header unter "Time:" gewünschten Zeitraum auswählen
+2. Die Karte aktualisiert sich automatisch
+
+#### **Custom Range** (Benutzerdefiniert)
+Für spezifische Zeiträume, z.B. "Route von gestern Abend 18:00 bis heute Morgen 08:00":
+
+**Verwendung:**
+1. Auf den **"📅 Custom"** Button klicken
+2. Custom Range Felder erscheinen:
+   - **From:** Start-Datum und -Zeit wählen (z.B. 16.11.2025 16:00)
+   - **To:** End-Datum und -Zeit wählen (z.B. 17.11.2025 06:00)
+3. Die Route wird automatisch für den gewählten Zeitraum angezeigt
+4. Zum Zurückschalten: **"📅 Quick"** Button klicken
+
+**Hinweis:** Custom Range Controls sind nur sichtbar wenn aktiviert - spart Platz im Header!
+
 ---
 
 ## 🏗 Architektur
@@ -420,10 +455,24 @@ Die App behandelt spezielle Fälle bei speed/battery korrekt:
 **GET /api/locations**
 - Location-Daten abrufen (mit Auto-Sync)
 - Query-Parameter:
-  - `username` - Device-Filter
-  - `timeRangeHours` - Zeitraum (1, 3, 6, 12, 24)
+  - `username` - Device-Filter (z.B. "10", "11")
+  - **Zeitfilter (wähle eine Methode):**
+    - `timeRangeHours` - Quick Filter (1, 3, 6, 12, 24)
+    - `startTime` & `endTime` - Custom Range (ISO 8601 Format)
   - `limit` - Max. Anzahl (Standard: 1000)
   - `sync=false` - Nur Cache ohne n8n Sync
+
+**Beispiele:**
+```bash
+# Quick Filter: Letzte 3 Stunden
+GET /api/locations?timeRangeHours=3
+
+# Custom Range: Spezifischer Zeitraum
+GET /api/locations?startTime=2025-11-16T16:00:00.000Z&endTime=2025-11-17T06:00:00.000Z
+
+# Kombiniert: Device + Custom Range
+GET /api/locations?username=10&startTime=2025-11-16T16:00:00.000Z&endTime=2025-11-17T06:00:00.000Z
+```
 
 **GET /api/devices/public**
 - Öffentliche Device-Liste (nur ID, Name, Color)
@@ -530,6 +579,26 @@ npm run dev
 # Production Logs (PM2)
 pm2 logs location-tracker-app
 ```
+
+### Zeitfilter debuggen
+
+Bei Problemen mit der Zeitfilterung (z.B. alte Locations werden nicht ausgefiltert):
+
+```bash
+node scripts/test-time-filter.js
+```
+
+**Das Script zeigt:**
+- Aktuelle Zeit (UTC und lokal)
+- Letzte Locations in der Datenbank
+- Welche Locations mit 1-Stunden-Filter angezeigt werden sollten
+- Vergleich zwischen alter (SQLite datetime) und neuer (JavaScript) Methode
+- Anzahl der gefilterten Locations
+
+**Verwendung:**
+1. Script ausführen um zu sehen, welche Locations in der DB sind
+2. Überprüfen ob die Zeitfilterung korrekt funktioniert
+3. Bei Problemen: App neu starten nach Code-Updates
 
 ---
 
@@ -651,6 +720,35 @@ location-tracker-app/
 │   └── location.ts                  # TypeScript Interfaces
 └── middleware.ts                    # Route Protection
 ```
+
+---
+
+## 📝 Changelog
+
+### Version 1.1.0 - November 2025
+
+#### 🆕 Neue Features
+- **Custom Date Range Filter**
+  - Benutzerdefinierte Zeiträume mit DateTime-Picker (z.B. 16.11.2025 16:00 - 17.11.2025 06:00)
+  - Toggle-Button zwischen Quick Filters und Custom Range
+  - Kompakte UI - Custom Range nur sichtbar wenn aktiviert
+  - Backend-Support mit `startTime` und `endTime` API-Parametern
+
+#### 🐛 Bug Fixes
+- **Zeitfilter-Bug behoben**
+  - Alte Locations (z.B. 6+ Stunden alt) werden jetzt korrekt ausgefiltert
+  - JavaScript-basierte Zeitberechnung statt SQLite `datetime('now')`
+  - Verhindert Zeitversatz-Probleme
+
+#### 🛠️ Verbesserungen
+- Zoom-basierte Icon-Skalierung für bessere Sichtbarkeit
+- Optimierte Zeitfilter-Logik in Datenbank-Queries
+- Debug-Script `test-time-filter.js` für Troubleshooting
+
+#### 📚 Dokumentation
+- README aktualisiert mit Custom Range Anleitung
+- API-Endpunkte Dokumentation erweitert
+- Wartungs-Abschnitt mit Debug-Script Information
 
 ---
 
