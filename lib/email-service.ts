@@ -147,6 +147,7 @@ export class EmailService {
 
   /**
    * Test SMTP connection
+   * @throws Error with detailed message if connection fails
    */
   async testConnection(config?: SMTPConfig): Promise<boolean> {
     try {
@@ -158,7 +159,10 @@ export class EmailService {
           host: config.host,
           port: config.port,
           secure: config.secure,
-          auth: config.auth,
+          auth: {
+            user: config.auth.user,
+            pass: config.auth.pass,
+          },
           connectionTimeout: config.timeout || 10000,
         });
       } else {
@@ -169,9 +173,22 @@ export class EmailService {
       await transporter.verify();
       console.log('[EmailService] SMTP connection test successful');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[EmailService] SMTP connection test failed:', error);
-      return false;
+
+      // Provide more helpful error messages
+      if (error.code === 'EAUTH') {
+        throw new Error(
+          'Authentication failed. For Gmail, use an App Password (not your regular password). ' +
+          'Enable 2FA and generate an App Password at: https://myaccount.google.com/apppasswords'
+        );
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
+        throw new Error('Connection timeout. Check your host, port, and firewall settings.');
+      } else if (error.code === 'ESOCKET') {
+        throw new Error('Connection failed. Verify your SMTP host and port are correct.');
+      } else {
+        throw new Error(error.message || 'SMTP connection test failed');
+      }
     }
   }
 

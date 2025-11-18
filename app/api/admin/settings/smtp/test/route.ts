@@ -35,10 +35,13 @@ export async function POST(request: Request) {
     }
 
     // Test connection
-    const connectionOk = await emailService.testConnection(config);
-    if (!connectionOk) {
+    try {
+      await emailService.testConnection(config);
+    } catch (error) {
       return NextResponse.json(
-        { error: 'SMTP connection failed. Please check your settings.' },
+        {
+          error: error instanceof Error ? error.message : 'SMTP connection failed. Please check your settings.'
+        },
         { status: 500 }
       );
     }

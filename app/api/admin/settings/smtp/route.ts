@@ -84,6 +84,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const config = body.config as SMTPConfig;
 
+    // Trim whitespace from credentials to prevent auth errors
+    if (config.host) config.host = config.host.trim();
+    if (config.auth?.user) config.auth.user = config.auth.user.trim();
+    if (config.auth?.pass) config.auth.pass = config.auth.pass.trim();
+    if (config.from?.email) config.from.email = config.from.email.trim();
+
     // Validation
     if (!config.host || !config.port || !config.auth?.user || !config.auth?.pass) {
       return NextResponse.json(

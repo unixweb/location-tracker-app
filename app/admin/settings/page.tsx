@@ -195,10 +195,23 @@ export default function SettingsPage() {
               type="text"
               required
               value={config.host}
-              onChange={(e) => setConfig({ ...config, host: e.target.value })}
+              onChange={(e) => setConfig({ ...config, host: e.target.value.trim() })}
               placeholder="smtp.gmail.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {config.host.includes('gmail') && (
+              <p className="mt-1 text-xs text-blue-600">
+                Gmail detected: Use App Password, not your regular password.
+                <a
+                  href="https://myaccount.google.com/apppasswords"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline ml-1"
+                >
+                  Generate App Password
+                </a>
+              </p>
+            )}
           </div>
 
           {/* Port and Secure */}
@@ -239,7 +252,7 @@ export default function SettingsPage() {
               type="text"
               required
               value={config.auth.user}
-              onChange={(e) => setConfig({ ...config, auth: { ...config.auth, user: e.target.value } })}
+              onChange={(e) => setConfig({ ...config, auth: { ...config.auth, user: e.target.value.trim() } })}
               placeholder="your-email@example.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -249,15 +262,25 @@ export default function SettingsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password {hasPassword && '(leave empty to keep current)'}
+              {config.host.includes('gmail') && (
+                <span className="text-red-600 font-semibold ml-2">
+                  - Use App Password!
+                </span>
+              )}
             </label>
             <input
               type="password"
               required={!hasPassword}
               value={config.auth.pass}
-              onChange={(e) => setConfig({ ...config, auth: { ...config.auth, pass: e.target.value } })}
-              placeholder={hasPassword ? '••••••••' : 'your-password'}
+              onChange={(e) => setConfig({ ...config, auth: { ...config.auth, pass: e.target.value.trim() } })}
+              placeholder={hasPassword ? '••••••••' : (config.host.includes('gmail') ? 'Gmail App Password (16 chars)' : 'your-password')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {config.host.includes('gmail') && (
+              <p className="mt-1 text-xs text-amber-600">
+                Do NOT use your Gmail password. Generate an App Password with 2FA enabled.
+              </p>
+            )}
           </div>
 
           {/* From Email */}
@@ -269,7 +292,7 @@ export default function SettingsPage() {
               type="email"
               required
               value={config.from.email}
-              onChange={(e) => setConfig({ ...config, from: { ...config.from, email: e.target.value } })}
+              onChange={(e) => setConfig({ ...config, from: { ...config.from, email: e.target.value.trim() } })}
               placeholder="noreply@example.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
