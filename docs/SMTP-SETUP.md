@@ -37,11 +37,24 @@ This guide explains how to configure SMTP for email functionality in the Locatio
 
 ### Method 2: Admin Panel (Recommended)
 
-1. Log in as admin
-2. Navigate to **Settings** → **SMTP Settings**
-3. Fill in SMTP configuration
-4. Click **Test Connection** to verify
-5. Click **Save Settings**
+**IMPORTANT:** The `ENCRYPTION_KEY` environment variable is **required** for database-stored SMTP configuration. Generate and set it before using the admin panel:
+
+```bash
+# Generate encryption key
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# Add to your environment variables (e.g., .env.local)
+ENCRYPTION_KEY=<generated-key>
+```
+
+Steps:
+1. Ensure `ENCRYPTION_KEY` is set in your environment
+2. Restart the application server to load the new environment variable
+3. Log in as admin
+4. Navigate to **Settings** → **SMTP Settings**
+5. Fill in SMTP configuration
+6. Click **Test Connection** to verify
+7. Click **Save Settings**
 
 ## Provider-Specific Setup
 
@@ -101,9 +114,13 @@ node scripts/test-smtp.js your-email@example.com
 
 ### Authentication Failed
 
-- Verify username and password
-- For Gmail: Use App Password, not account password
+- **For Gmail:** Use App Password, not account password
+  - Generate at: https://myaccount.google.com/apppasswords
+  - Enable 2FA first before creating App Passwords
+- Verify username and password have no trailing spaces
 - Check if SMTP is enabled for your account
+- **Database config users:** Ensure `ENCRYPTION_KEY` is set and server was restarted
+- If using database config after upgrading, click "Reset to Defaults" and re-enter credentials
 
 ### Emails Not Received
 

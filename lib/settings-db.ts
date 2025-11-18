@@ -61,7 +61,12 @@ export const settingsDb = {
 
       // Decrypt password if present
       if (config.auth?.pass) {
-        config.auth.pass = decrypt(config.auth.pass);
+        try {
+          config.auth.pass = decrypt(config.auth.pass);
+        } catch (decryptError) {
+          console.error('[SettingsDB] Failed to decrypt password:', decryptError);
+          throw decryptError;
+        }
       }
 
       return config;
@@ -76,11 +81,19 @@ export const settingsDb = {
    */
   setSMTPConfig: (config: SMTPConfig): void => {
     // Encrypt password before saving
+    let encryptedPass: string;
+    try {
+      encryptedPass = encrypt(config.auth.pass);
+    } catch (encryptError) {
+      console.error('[SettingsDB] Failed to encrypt password:', encryptError);
+      throw encryptError;
+    }
+
     const configToSave = {
       ...config,
       auth: {
         ...config.auth,
-        pass: encrypt(config.auth.pass),
+        pass: encryptedPass,
       },
     };
 

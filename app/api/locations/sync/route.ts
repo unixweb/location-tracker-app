@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { locationDb, Location } from '@/lib/db';
 import type { LocationResponse } from "@/types/location";
 
-const N8N_API_URL = "https://n8n.example.com/webhook/location";
+const N8N_API_URL = process.env.N8N_API_URL || "https://n8n.example.com/webhook/location";
 
 /**
  * POST /api/locations/sync
