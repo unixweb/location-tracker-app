@@ -18,10 +18,28 @@ export default auth((req) => {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Require ADMIN role for admin routes
     const userRole = (session.user as any).role;
-    if (userRole !== 'ADMIN') {
-      // Redirect non-admin users to unauthorized page
+
+    // Define VIEWER-accessible routes (read-only)
+    const viewerAllowedRoutes = [
+      '/admin',           // Dashboard
+      '/admin/devices',   // Devices list (read-only)
+    ];
+
+    // Check if VIEWER is accessing allowed route
+    const isViewerAllowedRoute = viewerAllowedRoutes.some(route =>
+      pathname === route || pathname.startsWith(route + '/')
+    );
+
+    // VIEWER can only access dashboard and devices (read-only)
+    if (userRole === 'VIEWER' && !isViewerAllowedRoute) {
+      const unauthorizedUrl = new URL('/unauthorized', req.url);
+      unauthorizedUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(unauthorizedUrl);
+    }
+
+    // Non-ADMIN and non-VIEWER users are denied
+    if (userRole !== 'ADMIN' && userRole !== 'VIEWER') {
       const unauthorizedUrl = new URL('/unauthorized', req.url);
       unauthorizedUrl.searchParams.set('from', pathname);
       return NextResponse.redirect(unauthorizedUrl);

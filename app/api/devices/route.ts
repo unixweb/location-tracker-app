@@ -55,13 +55,18 @@ export async function GET() {
   }
 }
 
-// POST /api/devices - Create new device
+// POST /api/devices - Create new device (ADMIN only)
 export async function POST(request: Request) {
   try {
     const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only ADMIN can create devices
+    if ((session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();

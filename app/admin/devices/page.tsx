@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 interface Device {
   id: string;
@@ -27,6 +28,10 @@ interface Device {
 }
 
 export default function DevicesPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const isAdmin = userRole === 'ADMIN';
+
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -188,13 +193,20 @@ export default function DevicesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Device Management</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
-        >
-          + Add Device
-        </button>
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Device Management</h2>
+          {!isAdmin && (
+            <p className="text-sm text-gray-600 mt-1">Read-only view</p>
+          )}
+        </div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+          >
+            + Add Device
+          </button>
+        )}
       </div>
 
       {error && (
@@ -306,20 +318,22 @@ export default function DevicesPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => openEditModal(device)}
-                  className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 text-sm font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => openDeleteModal(device)}
-                  className="flex-1 px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium"
-                >
-                  Delete
-                </button>
-              </div>
+              {isAdmin && (
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => openEditModal(device)}
+                    className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(device)}
+                    className="flex-1 px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

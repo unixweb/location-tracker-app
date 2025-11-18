@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,14 +10,22 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const isAdmin = userRole === 'ADMIN';
 
-  const navigation = [
-    { name: "Dashboard", href: "/admin" },
-    { name: "Devices", href: "/admin/devices" },
-    { name: "Users", href: "/admin/users" },
-    { name: "Settings", href: "/admin/settings" },
-    { name: "Emails", href: "/admin/emails" },
+  const allNavigation = [
+    { name: "Dashboard", href: "/admin", roles: ['ADMIN', 'VIEWER'] },
+    { name: "Devices", href: "/admin/devices", roles: ['ADMIN', 'VIEWER'] },
+    { name: "Users", href: "/admin/users", roles: ['ADMIN'] },
+    { name: "Settings", href: "/admin/settings", roles: ['ADMIN'] },
+    { name: "Emails", href: "/admin/emails", roles: ['ADMIN'] },
   ];
+
+  // Filter navigation based on user role
+  const navigation = allNavigation.filter(item =>
+    item.roles.includes(userRole as string)
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -25,9 +33,14 @@ export default function AdminLayout({
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Admin Panel
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isAdmin ? 'Admin Panel' : 'Dashboard'}
+              </h1>
+              {!isAdmin && (
+                <p className="text-xs text-gray-500">Viewer access</p>
+              )}
+            </div>
             <nav className="flex gap-4">
               {navigation.map((item) => (
                 <Link
