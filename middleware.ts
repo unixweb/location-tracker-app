@@ -21,9 +21,10 @@ export default auth((req) => {
     // Require ADMIN role for admin routes
     const userRole = (session.user as any).role;
     if (userRole !== 'ADMIN') {
-      // Redirect non-admin users to homepage with error
-      const homeUrl = new URL('/', req.url);
-      return NextResponse.redirect(homeUrl);
+      // Redirect non-admin users to unauthorized page
+      const unauthorizedUrl = new URL('/unauthorized', req.url);
+      unauthorizedUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(unauthorizedUrl);
     }
   }
 
