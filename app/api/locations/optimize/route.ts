@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { getLocationsDb } from '@/lib/db';
 
 /**
- * POST /api/locations/optimize
+ * POST /api/locations/optimize (ADMIN only)
  *
  * Optimize database by running VACUUM and ANALYZE
  * This reclaims unused space and updates query planner statistics
  */
 export async function POST() {
   try {
+    // ADMIN only
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const db = getLocationsDb();
 
     // Get size before optimization

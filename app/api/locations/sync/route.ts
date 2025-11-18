@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { locationDb, Location } from '@/lib/db';
 import type { LocationResponse } from "@/types/location";
 
 const N8N_API_URL = process.env.N8N_API_URL || "https://n8n.example.com/webhook/location";
 
 /**
- * POST /api/locations/sync
+ * POST /api/locations/sync (ADMIN only)
  *
  * Manually sync location data from n8n webhook to local SQLite cache.
  * This fetches all available data from n8n and stores only new records.
@@ -17,6 +18,11 @@ const N8N_API_URL = process.env.N8N_API_URL || "https://n8n.example.com/webhook/
  */
 export async function POST() {
   try {
+    // ADMIN only
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     // Get stats before sync
     const statsBefore = locationDb.getStats();
 
