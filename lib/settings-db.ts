@@ -61,7 +61,17 @@ export const settingsDb = {
 
       // Decrypt password if present
       if (config.auth?.pass) {
-        config.auth.pass = decrypt(config.auth.pass);
+        const encryptedPass = config.auth.pass;
+        console.log('[SettingsDB] Encrypted password length:', encryptedPass.length);
+        console.log('[SettingsDB] Encrypted password format check:', encryptedPass.split(':').length === 3 ? 'valid' : 'invalid');
+
+        try {
+          config.auth.pass = decrypt(config.auth.pass);
+          console.log('[SettingsDB] Password decrypted successfully, length:', config.auth.pass.length);
+        } catch (decryptError) {
+          console.error('[SettingsDB] Failed to decrypt password:', decryptError);
+          throw decryptError;
+        }
       }
 
       return config;
@@ -75,12 +85,24 @@ export const settingsDb = {
    * Save SMTP config to database (password encrypted)
    */
   setSMTPConfig: (config: SMTPConfig): void => {
+    console.log('[SettingsDB] Original password length:', config.auth.pass.length);
+
     // Encrypt password before saving
+    let encryptedPass: string;
+    try {
+      encryptedPass = encrypt(config.auth.pass);
+      console.log('[SettingsDB] Encrypted password length:', encryptedPass.length);
+      console.log('[SettingsDB] Encrypted password format check:', encryptedPass.split(':').length === 3 ? 'valid' : 'invalid');
+    } catch (encryptError) {
+      console.error('[SettingsDB] Failed to encrypt password:', encryptError);
+      throw encryptError;
+    }
+
     const configToSave = {
       ...config,
       auth: {
         ...config.auth,
-        pass: encrypt(config.auth.pass),
+        pass: encryptedPass,
       },
     };
 
