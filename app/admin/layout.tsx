@@ -45,7 +45,7 @@ export default function AdminLayout({
             <div className="flex gap-2 sm:gap-4">
               <Link
                 href="/"
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium hover:text-blue-600"
+                className="px-2 sm:px-4 py-2 text-sm text-black font-semibold hover:text-blue-600"
               >
                 Map
               </Link>
@@ -54,7 +54,7 @@ export default function AdminLayout({
                   await signOut({ redirect: false });
                   window.location.href = '/login';
                 }}
-                className="px-2 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs sm:text-sm font-medium"
+                className="px-2 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-semibold"
               >
                 Logout
               </button>
@@ -67,10 +67,10 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`px-3 py-2 rounded-md text-sm font-semibold transition-colors whitespace-nowrap ${
                   pathname === item.href
                     ? "bg-blue-600 text-white"
-                    : "text-gray-900 hover:bg-gray-200"
+                    : "text-black hover:bg-gray-200"
                 }`}
               >
                 {item.name}
