@@ -39,7 +39,7 @@ export default function Home() {
         <div className="flex flex-col gap-3">
           {/* Top row: Title and Admin link */}
           <div className="flex items-center justify-between">
-            <h1 className="text-lg sm:text-xl font-bold">Location Tracker</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-black">Location Tracker</h1>
             <a
               href="/admin"
               className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
@@ -52,7 +52,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
             {/* Device Filter */}
             <div className="flex items-center gap-2">
-              <label className="text-xs sm:text-sm font-medium whitespace-nowrap">Device:</label>
+              <label className="text-xs sm:text-sm font-medium text-black whitespace-nowrap">Device:</label>
               <select
                 value={selectedDevice}
                 onChange={(e) => setSelectedDevice(e.target.value)}
@@ -69,7 +69,7 @@ export default function Home() {
 
             {/* Time Filter */}
             <div className="flex items-center gap-2">
-              <label className="text-xs sm:text-sm font-medium whitespace-nowrap">Time:</label>
+              <label className="text-xs sm:text-sm font-medium text-black whitespace-nowrap">Time:</label>
               <select
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(Number(e.target.value))}
@@ -107,7 +107,7 @@ export default function Home() {
           {filterMode === "custom" && (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border border-blue-300 bg-blue-50 rounded-md p-2">
               <div className="flex items-center gap-1">
-                <label className="text-xs font-medium whitespace-nowrap">From:</label>
+                <label className="text-xs font-medium text-black whitespace-nowrap">From:</label>
                 <input
                   type="datetime-local"
                   value={startTime}
@@ -116,7 +116,7 @@ export default function Home() {
                 />
               </div>
               <div className="flex items-center gap-1">
-                <label className="text-xs font-medium whitespace-nowrap">To:</label>
+                <label className="text-xs font-medium text-black whitespace-nowrap">To:</label>
                 <input
                   type="datetime-local"
                   value={endTime}
