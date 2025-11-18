@@ -46,3 +46,5 @@ next-env.d.ts
 /data/*.sqlite-shm
 /data/*.sqlite-wal
 !/data/.gitkeep
+*.db
+*.sqlite
