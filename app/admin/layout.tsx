@@ -35,11 +35,11 @@ export default function AdminLayout({
           {/* Top row: Title + Logout */}
           <div className="flex justify-between items-center mb-3 lg:mb-0">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-black">
                 {isAdmin ? 'Admin Panel' : 'Dashboard'}
               </h1>
               {!isAdmin && (
-                <p className="text-xs text-gray-600 font-medium">Viewer access</p>
+                <p className="text-xs text-black font-semibold">Viewer access</p>
               )}
             </div>
             <div className="flex gap-2 sm:gap-4">
