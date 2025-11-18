@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { LocationResponse } from "@/types/location";
 
 interface DeviceInfo {
@@ -10,6 +11,10 @@ interface DeviceInfo {
 }
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const isAdmin = userRole === 'ADMIN';
+
   const [stats, setStats] = useState({
     totalDevices: 0,
     totalPoints: 0,
@@ -459,14 +464,15 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Database Maintenance */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Database Maintenance
-          </h3>
-        </div>
-        <div className="p-6 space-y-6">
+      {/* Database Maintenance - ADMIN ONLY */}
+      {isAdmin && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Database Maintenance
+            </h3>
+          </div>
+          <div className="p-6 space-y-6">
           {/* Sync Section */}
           <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-2">
@@ -591,6 +597,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Last Updated */}
       <div className="text-sm text-gray-500 text-right">
