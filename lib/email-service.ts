@@ -28,10 +28,6 @@ export class EmailService {
     const dbConfig = settingsDb.getSMTPConfig();
     if (dbConfig) {
       console.log('[EmailService] Using SMTP config from database');
-      console.log('[EmailService] DB Config - Host:', dbConfig.host);
-      console.log('[EmailService] DB Config - User:', dbConfig.auth.user);
-      console.log('[EmailService] DB Config - Password length:', dbConfig.auth.pass?.length);
-      console.log('[EmailService] DB Config - Password first 3 chars:', dbConfig.auth.pass?.substring(0, 3));
       return dbConfig;
     }
 
