@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { locationDb } from '@/lib/db';
 
 /**
- * POST /api/locations/cleanup
+ * POST /api/locations/cleanup (ADMIN only)
  *
  * Delete old location records and optimize database
  *
@@ -13,6 +14,11 @@ import { locationDb } from '@/lib/db';
  */
 export async function POST(request: NextRequest) {
   try {
+    // ADMIN only
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const retentionHours = body.retentionHours || 168; // Default: 7 days
 

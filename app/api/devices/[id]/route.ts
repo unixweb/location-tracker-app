@@ -42,7 +42,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/devices/[id] - Update device
+// PATCH /api/devices/[id] - Update device (ADMIN only)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -52,6 +52,11 @@ export async function PATCH(
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only ADMIN can update devices
+    if ((session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -84,7 +89,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/devices/[id] - Soft delete device
+// DELETE /api/devices/[id] - Soft delete device (ADMIN only)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -94,6 +99,11 @@ export async function DELETE(
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only ADMIN can delete devices
+    if ((session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
