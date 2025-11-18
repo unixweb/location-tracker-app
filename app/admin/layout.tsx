@@ -39,13 +39,13 @@ export default function AdminLayout({
                 {isAdmin ? 'Admin Panel' : 'Dashboard'}
               </h1>
               {!isAdmin && (
-                <p className="text-xs text-gray-500">Viewer access</p>
+                <p className="text-xs text-gray-600 font-medium">Viewer access</p>
               )}
             </div>
             <div className="flex gap-2 sm:gap-4">
               <Link
                 href="/"
-                className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:text-gray-900"
+                className="px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium hover:text-blue-600"
               >
                 Map
               </Link>
@@ -54,7 +54,7 @@ export default function AdminLayout({
                   await signOut({ redirect: false });
                   window.location.href = '/login';
                 }}
-                className="px-2 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs sm:text-sm"
+                className="px-2 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs sm:text-sm font-medium"
               >
                 Logout
               </button>
@@ -70,7 +70,7 @@ export default function AdminLayout({
                 className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                   pathname === item.href
                     ? "bg-blue-600 text-white"
-                    : "text-gray-700 hover:bg-gray-200"
+                    : "text-gray-900 hover:bg-gray-200"
                 }`}
               >
                 {item.name}
