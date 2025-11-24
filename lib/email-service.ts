@@ -8,8 +8,10 @@ import { settingsDb } from './settings-db';
 import {
   renderWelcomeEmail,
   renderPasswordResetEmail,
+  renderMqttCredentialsEmail,
   WelcomeEmailData,
   PasswordResetEmailData,
+  MqttCredentialsEmailData,
 } from './email-renderer';
 
 export class EmailService {
@@ -141,6 +143,27 @@ export class EmailService {
     await this.sendEmail(
       data.email,
       'Password Reset Request - Location Tracker',
+      html
+    );
+  }
+
+  /**
+   * Send MQTT credentials email
+   */
+  async sendMqttCredentialsEmail(data: MqttCredentialsEmailData & { email: string }): Promise<void> {
+    const html = await renderMqttCredentialsEmail({
+      deviceName: data.deviceName,
+      deviceId: data.deviceId,
+      mqttUsername: data.mqttUsername,
+      mqttPassword: data.mqttPassword,
+      brokerUrl: data.brokerUrl,
+      brokerHost: data.brokerHost,
+      brokerPort: data.brokerPort,
+    });
+
+    await this.sendEmail(
+      data.email,
+      `MQTT Credentials - ${data.deviceName}`,
       html
     );
   }

@@ -10,9 +10,10 @@ import { getLocationsDb } from '@/lib/db';
  */
 export async function POST() {
   try {
-    // ADMIN only
+    // Super admin only (username "admin")
     const session = await auth();
-    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+    const username = session?.user?.name || '';
+    if (!session?.user || username !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const db = getLocationsDb();

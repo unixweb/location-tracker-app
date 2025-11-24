@@ -6,11 +6,22 @@ export const runtime = 'nodejs';
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
+  const session = req.auth;
+
+  // Check if accessing map route (requires authentication only)
+  if (pathname.startsWith('/map')) {
+    // Require authentication for map access
+    if (!session?.user) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    // All authenticated users can access the map
+    return NextResponse.next();
+  }
 
   // Check if accessing admin routes
   if (pathname.startsWith('/admin')) {
-    const session = req.auth;
-
     // Require authentication
     if (!session?.user) {
       const loginUrl = new URL('/login', req.url);
@@ -50,5 +61,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/map/:path*"],
 };

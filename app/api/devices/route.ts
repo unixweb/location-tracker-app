@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { deviceDb, locationDb } from "@/lib/db";
+import { deviceDb, locationDb, userDb } from "@/lib/db";
 
 // GET /api/devices - List all devices (from database)
 export async function GET() {
@@ -11,8 +11,18 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get devices from database
-    const devices = deviceDb.findAll();
+    // Get devices from database (filtered by user ownership)
+    const userId = (session.user as any).id;
+    let targetUserId = userId;
+
+    // If user is a VIEWER with a parent, show parent's devices instead
+    const currentUser = userDb.findById(userId);
+    if (currentUser && currentUser.role === 'VIEWER' && currentUser.parent_user_id) {
+      targetUserId = currentUser.parent_user_id;
+      console.log(`[Devices] VIEWER ${currentUser.username} accessing parent's devices (parent_id: ${targetUserId})`);
+    }
+
+    const devices = deviceDb.findAll({ userId: targetUserId });
 
     // Fetch location data from local SQLite cache (24h history)
     const allLocations = locationDb.findMany({

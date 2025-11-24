@@ -27,6 +27,18 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const currentUsername = session.user.name || '';
+    const currentUserId = (session.user as any).id || '';
+
+    // Only the "admin" user can view any user details
+    // ADMIN users can only view their own created viewers
+    if (currentUsername !== 'admin') {
+      // Check if this user is a child of the current user
+      if (user.parent_user_id !== currentUserId) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+    }
+
     // Remove password hash from response
     const { passwordHash, ...safeUser } = user;
 
@@ -61,6 +73,21 @@ export async function PATCH(
     const user = userDb.findById(id);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const currentUsername = session.user.name || '';
+    const currentUserId = (session.user as any).id || '';
+
+    // Only the "admin" user can modify any user
+    // ADMIN users can only modify their own created viewers
+    if (currentUsername !== 'admin') {
+      // Check if this user is a child of the current user
+      if (user.parent_user_id !== currentUserId) {
+        return NextResponse.json(
+          { error: "Forbidden: Cannot modify this user" },
+          { status: 403 }
+        );
+      }
     }
 
     const body = await request.json();
@@ -140,6 +167,21 @@ export async function DELETE(
     const user = userDb.findById(id);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const currentUsername = session.user.name || '';
+    const currentUserId = (session.user as any).id || '';
+
+    // Only the "admin" user can delete any user
+    // ADMIN users can only delete their own created viewers
+    if (currentUsername !== 'admin') {
+      // Check if this user is a child of the current user
+      if (user.parent_user_id !== currentUserId) {
+        return NextResponse.json(
+          { error: "Forbidden: Cannot delete this user" },
+          { status: 403 }
+        );
+      }
     }
 
     // Prevent deleting yourself

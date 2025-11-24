@@ -19,7 +19,23 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const users = userDb.findAll();
+    const currentUsername = session.user.name || '';
+    const currentUserId = (session.user as any).id || '';
+
+    // Only the "admin" user can see all users
+    // Other ADMIN users see only their created viewers (parent-child relationship)
+    let users: any[];
+
+    if (currentUsername === 'admin') {
+      // Super admin sees all users
+      users = userDb.findAll();
+    } else if ((session.user as any).role === 'ADMIN') {
+      // ADMIN users see only their child viewers
+      users = userDb.findAll({ parentUserId: currentUserId });
+    } else {
+      // VIEWER users see nobody
+      users = [];
+    }
 
     // Remove password hashes from response
     const safeUsers = users.map(({ passwordHash, ...user }) => user);
@@ -78,6 +94,26 @@ export async function POST(request: Request) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Determine parent_user_id
+    // If current user is not "admin", set parent_user_id to current user's ID
+    // If creating a VIEWER, set parent_user_id to current user's ID
+    const currentUsername = session.user.name || '';
+    const currentUserId = (session.user as any).id || '';
+    let parent_user_id: string | null = null;
+
+    if (currentUsername !== 'admin') {
+      // Non-admin ADMIN users create viewers that belong to them
+      parent_user_id = currentUserId;
+
+      // Force role to VIEWER for non-admin ADMIN users
+      if (role && role !== 'VIEWER') {
+        return NextResponse.json(
+          { error: 'You can only create VIEWER users' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Create user
     const user = userDb.create({
       id: randomUUID(),
@@ -85,6 +121,7 @@ export async function POST(request: Request) {
       email: email || null,
       passwordHash,
       role: role || 'VIEWER',
+      parent_user_id,
     });
 
     // Send welcome email (don't fail if email fails)

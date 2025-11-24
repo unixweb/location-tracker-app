@@ -14,9 +14,10 @@ import { locationDb } from '@/lib/db';
  */
 export async function POST(request: NextRequest) {
   try {
-    // ADMIN only
+    // Super admin only (username "admin")
     const session = await auth();
-    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+    const username = session?.user?.name || '';
+    if (!session?.user || username !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const body = await request.json();

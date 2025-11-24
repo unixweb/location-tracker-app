@@ -1,0 +1,56 @@
+services:
+  # Location Tracker App (Next.js)
+  app:
+    build: .
+    container_name: location-tracker-app
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SECRET=${AUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+      - MQTT_USERNAME=${MQTT_ADMIN_USERNAME:-admin}
+      - MQTT_PASSWORD=${MQTT_ADMIN_PASSWORD:-admin}
+      - MOSQUITTO_PASSWORD_FILE=/mosquitto/config/password.txt
+      - MOSQUITTO_ACL_FILE=/mosquitto/config/acl.txt
+      - MOSQUITTO_CONTAINER_NAME=mosquitto
+      - MOSQUITTO_ADMIN_USERNAME=${MQTT_ADMIN_USERNAME:-admin}
+      - MOSQUITTO_ADMIN_PASSWORD=${MQTT_ADMIN_PASSWORD:-admin}
+      # SMTP Configuration
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Location Tracker}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./mosquitto/config:/mosquitto/config  # Lokaler Ordner statt Docker Volume
+      - /var/run/docker.sock:/var/run/docker.sock  # Für Mosquitto Reload
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  # Eclipse Mosquitto MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"  # MQTT
+      - "9001:9001"  # WebSocket
+    volumes:
+      - ./mosquitto/config:/mosquitto/config  # Lokaler Ordner mit mosquitto.conf
+      - ./mosquitto/logs:/mosquitto/log      # Lokaler Ordner für Logs
+      - mosquitto_data:/mosquitto/data
+    restart: unless-stopped
+
+volumes:
+  # mosquitto_config und mosquitto_logs werden als bind mounts verwendet
+  mosquitto_data:
+    name: mosquitto_data

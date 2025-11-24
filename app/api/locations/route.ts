@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { LocationResponse } from "@/types/location";
-import { locationDb, Location } from "@/lib/db";
+import { locationDb, Location, deviceDb, userDb } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 const N8N_API_URL = process.env.N8N_API_URL || "https://n8n.example.com/webhook/location";
 
@@ -22,6 +23,31 @@ const N8N_API_URL = process.env.N8N_API_URL || "https://n8n.example.com/webhook/
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user's allowed device IDs for filtering locations
+    const userId = (session.user as any).id;
+    const role = (session.user as any).role;
+    const sessionUsername = session.user.name || '';
+
+    // Get list of device IDs the user is allowed to access
+    const userDeviceIds = userDb.getAllowedDeviceIds(userId, role, sessionUsername);
+
+    // If user has no devices, return empty response
+    if (userDeviceIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        current: null,
+        history: [],
+        total_points: 0,
+        last_updated: new Date().toISOString(),
+      });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const username = searchParams.get('username') || undefined;
     const timeRangeHours = searchParams.get('timeRangeHours')
@@ -122,11 +148,17 @@ export async function GET(request: NextRequest) {
       limit,
     });
 
+    // Filter locations to only include user's devices
+    locations = locations.filter(loc => loc.username && userDeviceIds.includes(loc.username));
+
     // Step 3: If DB is empty, use n8n data as fallback
     if (locations.length === 0 && n8nData && n8nData.history) {
       console.log('[API] DB empty, using n8n data as fallback');
       // Filter n8n data if needed
       let filteredHistory = n8nData.history;
+
+      // Filter by user's devices
+      filteredHistory = filteredHistory.filter(loc => loc.username && userDeviceIds.includes(loc.username));
 
       if (username) {
         filteredHistory = filteredHistory.filter(loc => loc.username === username);

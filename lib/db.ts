@@ -33,9 +33,17 @@ export interface Device {
 }
 
 export const deviceDb = {
-  findAll: (): Device[] => {
+  findAll: (options?: { userId?: string }): Device[] => {
     const db = getDb();
-    const devices = db.prepare('SELECT * FROM Device WHERE isActive = 1').all() as Device[];
+    let query = 'SELECT * FROM Device WHERE isActive = 1';
+    const params: any[] = [];
+
+    if (options?.userId) {
+      query += ' AND ownerId = ?';
+      params.push(options.userId);
+    }
+
+    const devices = db.prepare(query).all(...params) as Device[];
     db.close();
     return devices;
   },
@@ -122,15 +130,36 @@ export interface User {
   email: string | null;
   passwordHash: string;
   role: string;
+  parent_user_id: string | null;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
 }
 
 export const userDb = {
-  findAll: (): User[] => {
+  findAll: (options?: { excludeUsername?: string; parentUserId?: string }): User[] => {
     const db = getDb();
-    const users = db.prepare('SELECT * FROM User').all() as User[];
+    let query = 'SELECT * FROM User';
+    const params: any[] = [];
+    const conditions: string[] = [];
+
+    if (options?.excludeUsername) {
+      conditions.push('username != ?');
+      params.push(options.excludeUsername);
+    }
+
+    if (options?.parentUserId) {
+      conditions.push('parent_user_id = ?');
+      params.push(options.parentUserId);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    const users = params.length > 0
+      ? db.prepare(query).all(...params) as User[]
+      : db.prepare(query).all() as User[];
     db.close();
     return users;
   },
@@ -149,11 +178,11 @@ export const userDb = {
     return user || null;
   },
 
-  create: (user: { id: string; username: string; email: string | null; passwordHash: string; role: string }): User => {
+  create: (user: { id: string; username: string; email: string | null; passwordHash: string; role: string; parent_user_id?: string | null }): User => {
     const db = getDb();
     const stmt = db.prepare(`
-      INSERT INTO User (id, username, email, passwordHash, role, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO User (id, username, email, passwordHash, role, parent_user_id, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `);
 
     stmt.run(
@@ -161,7 +190,8 @@ export const userDb = {
       user.username,
       user.email,
       user.passwordHash,
-      user.role
+      user.role,
+      user.parent_user_id || null
     );
 
     const created = db.prepare('SELECT * FROM User WHERE id = ?').get(user.id) as User;
@@ -213,6 +243,47 @@ export const userDb = {
     const result = db.prepare('DELETE FROM User WHERE id = ?').run(id);
     db.close();
     return result.changes > 0;
+  },
+
+  /**
+   * Get list of device IDs that a user is allowed to access
+   * @param userId - The user's ID
+   * @param role - The user's role (ADMIN, VIEWER)
+   * @param username - The user's username (for super admin check)
+   * @returns Array of device IDs the user can access
+   */
+  getAllowedDeviceIds: (userId: string, role: string, username: string): string[] => {
+    const db = getDb();
+
+    try {
+      // Super admin (username === "admin") can see ALL devices
+      if (username === 'admin') {
+        const allDevices = db.prepare('SELECT id FROM Device WHERE isActive = 1').all() as { id: string }[];
+        return allDevices.map(d => d.id);
+      }
+
+      // VIEWER users see their parent user's devices
+      if (role === 'VIEWER') {
+        const user = db.prepare('SELECT parent_user_id FROM User WHERE id = ?').get(userId) as { parent_user_id: string | null } | undefined;
+        if (user?.parent_user_id) {
+          const devices = db.prepare('SELECT id FROM Device WHERE ownerId = ? AND isActive = 1').all(user.parent_user_id) as { id: string }[];
+          return devices.map(d => d.id);
+        }
+        // If VIEWER has no parent, return empty array
+        return [];
+      }
+
+      // Regular ADMIN users see only their own devices
+      if (role === 'ADMIN') {
+        const devices = db.prepare('SELECT id FROM Device WHERE ownerId = ? AND isActive = 1').all(userId) as { id: string }[];
+        return devices.map(d => d.id);
+      }
+
+      // Default: no access
+      return [];
+    } finally {
+      db.close();
+    }
   },
 };
 

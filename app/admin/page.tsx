@@ -13,7 +13,9 @@ interface DeviceInfo {
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role;
+  const username = session?.user?.name || '';
   const isAdmin = userRole === 'ADMIN';
+  const isSuperAdmin = username === 'admin';
 
   const [stats, setStats] = useState({
     totalDevices: 0,
@@ -23,15 +25,6 @@ export default function AdminDashboard() {
   });
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [cleanupStatus, setCleanupStatus] = useState<{
-    loading: boolean;
-    message: string;
-    type: 'success' | 'error' | '';
-  }>({
-    loading: false,
-    message: '',
-    type: '',
-  });
-  const [syncStatus, setSyncStatus] = useState<{
     loading: boolean;
     message: string;
     type: 'success' | 'error' | '';
@@ -195,56 +188,6 @@ export default function AdminDashboard() {
     // Clear message after 5 seconds
     setTimeout(() => {
       setCleanupStatus({ loading: false, message: '', type: '' });
-    }, 5000);
-  };
-
-  // Sync locations from n8n
-  const handleSync = async () => {
-    setSyncStatus({ loading: true, message: '', type: '' });
-
-    try {
-      const response = await fetch('/api/locations/sync', {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.synced > 0) {
-          setSyncStatus({
-            loading: false,
-            message: `✓ Synced ${data.synced} new locations from n8n. Total: ${data.after.total}`,
-            type: 'success',
-          });
-          // Refresh stats
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        } else {
-          setSyncStatus({
-            loading: false,
-            message: `✓ Already up to date. No new locations found.`,
-            type: 'success',
-          });
-        }
-      } else {
-        setSyncStatus({
-          loading: false,
-          message: `Error: ${data.error}`,
-          type: 'error',
-        });
-      }
-    } catch (error) {
-      setSyncStatus({
-        loading: false,
-        message: 'Failed to sync locations. Is n8n reachable?',
-        type: 'error',
-      });
-    }
-
-    // Clear message after 5 seconds
-    setTimeout(() => {
-      setSyncStatus({ loading: false, message: '', type: '' });
     }, 5000);
   };
 
@@ -464,8 +407,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Database Maintenance - ADMIN ONLY */}
-      {isAdmin && (
+      {/* Database Maintenance - SUPER ADMIN ONLY (username "admin") */}
+      {isSuperAdmin && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -473,40 +416,8 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <div className="p-6 space-y-6">
-          {/* Sync Section */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">
-              Sync from n8n
-            </h4>
-            <p className="text-sm text-gray-600 mb-3">
-              Manually fetch new location data from n8n webhook and update local cache.
-            </p>
-
-            {/* Sync Status Message */}
-            {syncStatus.message && (
-              <div
-                className={`mb-3 p-3 rounded ${
-                  syncStatus.type === 'success'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {syncStatus.message}
-              </div>
-            )}
-
-            <button
-              onClick={handleSync}
-              disabled={syncStatus.loading}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <span>{syncStatus.loading ? '🔄' : '🔄'}</span>
-              {syncStatus.loading ? 'Syncing...' : 'Sync Now'}
-            </button>
-          </div>
-
           {/* Cleanup Section */}
-          <div className="border-t pt-6">
+          <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-2">
               Clean up old data
             </h4>

@@ -1,13 +1,33 @@
 import { NextResponse } from "next/server";
-import { deviceDb } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { deviceDb, userDb } from "@/lib/db";
 
-// GET /api/devices/public - Public endpoint for device names and colors (no auth required)
+// GET /api/devices/public - Authenticated endpoint for device names and colors
 export async function GET() {
   try {
-    const devices = deviceDb.findAll();
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+    const role = (session.user as any).role;
+    const username = session.user.name || '';
+
+    // Get list of device IDs the user is allowed to access
+    const allowedDeviceIds = userDb.getAllowedDeviceIds(userId, role, username);
+
+    // Fetch all active devices
+    const allDevices = deviceDb.findAll();
+
+    // Filter to only devices the user can access
+    const userDevices = allDevices.filter(device =>
+      allowedDeviceIds.includes(device.id)
+    );
 
     // Return only public information (id, name, color)
-    const publicDevices = devices.map((device) => ({
+    const publicDevices = userDevices.map((device) => ({
       id: device.id,
       name: device.name,
       color: device.color,

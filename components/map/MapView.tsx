@@ -157,8 +157,9 @@ export default function MapView({ selectedDevice, timeFilter, isPaused, filterMo
         }
 
         params.set("limit", "5000"); // Fetch more data for better history
+        params.set("sync", "false");  // Disable n8n sync (using direct MQTT)
 
-        // Fetch from local SQLite API (with auto-sync from n8n)
+        // Fetch from local SQLite API (MQTT subscriber writes directly)
         const response = await fetch(`/api/locations?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to fetch locations");
 
@@ -295,9 +296,11 @@ export default function MapView({ selectedDevice, timeFilter, isPaused, filterMo
                 opacity={0.6}
               />
 
-              {/* Markers - reverse for rendering (oldest first = back, newest last = front/top) */}
-              {[...sortedLocs].reverse().map((loc, idx, arr) => {
-                const isLatest = idx === arr.length - 1; // Last in reversed = newest (on top)
+              {/* Markers - render with explicit z-index (newest on top) */}
+              {sortedLocs.map((loc, idx) => {
+                const isLatest = idx === 0; // First in sorted array = newest (DESC order)
+                // Calculate z-index: newer locations get higher z-index
+                const zIndexOffset = sortedLocs.length - idx;
 
                 // Debug: Log for latest location only
                 if (isLatest) {
@@ -320,6 +323,7 @@ export default function MapView({ selectedDevice, timeFilter, isPaused, filterMo
                       isLatest,
                       currentZoom
                     )}
+                    zIndexOffset={zIndexOffset}
                   >
                     <Popup>
                       <div className="text-sm space-y-1">
