@@ -33,10 +33,12 @@ db.exec(`
     email TEXT,
     passwordHash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'VIEWER',
+    parent_user_id TEXT,
     createdAt TEXT DEFAULT (datetime('now')),
     updatedAt TEXT DEFAULT (datetime('now')),
     lastLoginAt TEXT,
 
+    FOREIGN KEY (parent_user_id) REFERENCES User(id) ON DELETE SET NULL,
     CHECK (role IN ('ADMIN', 'VIEWER'))
   );
 `);
@@ -98,6 +100,68 @@ db.exec(`
   ON password_reset_tokens(user_id);
 `);
 console.log('✓ Created password reset tokens index');
+
+// Create MQTT credentials table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS mqtt_credentials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT UNIQUE NOT NULL,
+    mqtt_username TEXT UNIQUE NOT NULL,
+    mqtt_password_hash TEXT NOT NULL,
+    enabled INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (device_id) REFERENCES Device(id) ON DELETE CASCADE,
+    CHECK (enabled IN (0, 1))
+  );
+`);
+console.log('✓ Created mqtt_credentials table');
+
+// Create MQTT ACL rules table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS mqtt_acl_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT NOT NULL,
+    topic_pattern TEXT NOT NULL,
+    permission TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (device_id) REFERENCES Device(id) ON DELETE CASCADE,
+    CHECK (permission IN ('read', 'write', 'readwrite'))
+  );
+`);
+console.log('✓ Created mqtt_acl_rules table');
+
+// Create MQTT sync status table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS mqtt_sync_status (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    pending_changes INTEGER DEFAULT 0,
+    last_sync_at TEXT,
+    last_sync_status TEXT DEFAULT 'never',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (id = 1)
+  );
+`);
+console.log('✓ Created mqtt_sync_status table');
+
+// Initialize mqtt_sync_status with default row
+db.exec(`
+  INSERT OR IGNORE INTO mqtt_sync_status (id, pending_changes, last_sync_status)
+  VALUES (1, 0, 'never');
+`);
+console.log('✓ Initialized mqtt_sync_status');
+
+// Create indexes for MQTT tables
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_mqtt_credentials_device_id ON mqtt_credentials(device_id);
+  CREATE INDEX IF NOT EXISTS idx_mqtt_credentials_username ON mqtt_credentials(mqtt_username);
+  CREATE INDEX IF NOT EXISTS idx_mqtt_acl_device_id ON mqtt_acl_rules(device_id);
+`);
+console.log('✓ Created MQTT indexes');
 
 // Check if admin user exists
 const existingAdmin = db.prepare('SELECT * FROM User WHERE username = ?').get('admin');
